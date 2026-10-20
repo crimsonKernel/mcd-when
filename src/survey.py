@@ -67,16 +67,25 @@ def load_config() -> dict[str, Any]:
 
 # ---------- 解析工具 ----------
 
-def parse_periods(store: dict[str, Any]) -> list[dict[str, str]]:
-    """从 reservationTimeOptions 解析官方时段边界。"""
-    periods: list[dict[str, str]] = []
-    for opt in store.get("reservationTimeOptions") or []:
-        text = opt.get("reservationOptionText") or ""
-        for m in re.finditer(r"(早餐|午餐|下午茶|夜市)\((\d{2}:\d{2})至(\d{2}:\d{2})\)", text):
-            periods.append({"name": m.group(1), "start": m.group(2), "end": m.group(3)})
-        if periods:
-            break  # 只取一天的代表值(各天结构相同)
-    return periods
+def parse_periods(store: dict[str, Any], target_date: str | None = None) -> list[dict[str, str]]:
+    """从 reservationTimeOptions 解析官方时段边界。
+
+    坑: reservationTimeOptions 按天返回, 而「今天」那份只含**尚未结束**的时段 ——
+    早餐档一过它就从文本里消失。所以普查目标日若是明天, 必须明确按 target_date 取,
+    否则会拿到一张残缺的时段表(表现为四城 periods 缺少早餐)。
+    """
+    opts = store.get("reservationTimeOptions") or []
+    chosen = None
+    if target_date:
+        chosen = next((o for o in opts if o.get("date") == target_date), None)
+    if chosen is None:
+        chosen = next((o for o in opts if o.get("today") is False), opts[0] if opts else None)
+    if chosen is None:
+        return []
+    text = chosen.get("reservationOptionText") or ""
+    found = [{"name": m.group(1), "start": m.group(2), "end": m.group(3)}
+             for m in re.finditer(r"(早餐|午餐|下午茶|夜市)\((\d{2}:\d{2})至(\d{2}:\d{2})\)", text)]
+    return found or []
 
 
 def hhmm_to_min(t: str) -> int:
@@ -152,7 +161,7 @@ def survey_city(client: McdMcpClient, city: str, target_date: str,
     print(f"  自提门店: {store['storeName']} ({store['storeCode']}) "
           f"营业 {store.get('businessStartTime')}-{store.get('businessEndTime')}")
 
-    periods = parse_periods(store)
+    periods = parse_periods(store, target)
     if periods:
         print("  官方时段: " + " | ".join(f"{p['name']} {p['start']}-{p['end']}" for p in periods))
 
@@ -255,6 +264,35 @@ def survey_city(client: McdMcpClient, city: str, target_date: str,
     }
 
 
+def save_surface(results: list[dict[str, Any]], target: str, server_now: Any) -> Path:
+    """把当前已采集的城市合并落盘。同名城市覆盖, 其余保留(分批采集可累加)。
+    每采完一个城市就调一次 —— 上次四城普查崩在最后写盘, 40 分钟数据全丢, 教训。"""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    out = DATA_DIR / "surface.json"
+    prev_cities: list[dict[str, Any]] = []
+    if out.exists():
+        try:
+            prev_cities = json.loads(out.read_text(encoding="utf-8")).get("cities") or []
+        except json.JSONDecodeError:
+            prev_cities = []
+    merged = {c["city"]: c for c in prev_cities}
+    for c in results:
+        merged[c["city"]] = c
+    final_cities = [merged[k] for k in merged]
+    surface = {
+        "project": "麦当劳几点最便宜 (mcd-when)",
+        "generatedAt": datetime.now().isoformat(timespec="seconds"),
+        "targetDate": target,
+        "serverNow": server_now,
+        "isDemo": False,
+        "dataSource": "麦当劳中国官方 MCP (https://mcp.mcd.cn) calculate-price 实时返回, 单位: 分",
+        "readOnlyGuarantee": sorted(READ_ONLY_TOOLS),
+        "cities": final_cities,
+    }
+    out.write_text(json.dumps(surface, ensure_ascii=False, indent=1), encoding="utf-8")
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="麦当劳几点最便宜 · 全天价格普查(今天跑明天)")
     parser.add_argument("--city", action="append",
@@ -282,35 +320,17 @@ def main() -> int:
     for city in args.city:
         try:
             results.append(survey_city(client, city, target, args.dry_run))
+            if not args.dry_run:
+                out = save_surface(results, target, d.get("formatted"))
+                print(f"  [落盘] {city} 已写入 {out.name}")
         except McdMcpError as e:
             print(f"[跳过] {city}: {e}")
 
     if args.dry_run:
         return 0
 
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    prev_cities: list[dict[str, Any]] = []
-    if out.exists():
-        try:
-            prev_cities = json.loads(out.read_text(encoding="utf-8")).get("cities") or []
-        except json.JSONDecodeError:
-            prev_cities = []
-    # 同名城市用新结果覆盖, 其余保留(多城市分批采集可累加)
-    merged = {c["city"]: c for c in prev_cities}
-    for c in results:
-        merged[c["city"]] = c
-    final_cities = [merged[k] for k in merged]
-    surface = {
-        "project": "麦当劳几点最便宜 (mcd-when)",
-        "generatedAt": datetime.now().isoformat(timespec="seconds"),
-        "targetDate": target,
-        "serverNow": d.get("formatted"),
-        "isDemo": False,
-        "dataSource": "麦当劳中国官方 MCP (https://mcp.mcd.cn) calculate-price 实时返回, 单位: 分",
-        "readOnlyGuarantee": sorted(READ_ONLY_TOOLS),
-        "cities": final_cities,
-    }
-    out.write_text(json.dumps(surface, ensure_ascii=False, indent=1), encoding="utf-8")
+    out = save_surface(results, target, d.get("formatted"))
+    final_cities = json.loads(out.read_text(encoding="utf-8"))["cities"]
     total = sum(len(r["grid"].get(ch["id"], {}).get(t, {}))
                 for r in final_cities for ch in r["channels"] for t in r["slots"])
     print(f"\n普查完成 -> {out} | 数据点 {total} | 城市 {len(final_cities)} "

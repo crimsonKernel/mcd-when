@@ -1,7 +1,7 @@
 # 宣发文案集 · 麦当劳几点最便宜 (mcd-when)
 
 > 四平台版本, 均基于真机实测数据。仓库地址、配图(images/heatmap.png)、
-> 在线报告链接在发布时替换占位符 `{{REPO_URL}}` / `{{REPORT_URL}}`。
+> 在线报告链接在发布时替换占位符 `{{REPO_URL}}` / `https://mcd-when.app.workbuddy.host/`。
 > 注意: 所有数字都来自 calculate-price 实测, 不要夸大, 不要编造新结论。
 
 ---
@@ -33,7 +33,7 @@
 纯 Python 标准库, 零第三方依赖, 全链路只读(写操作白名单硬隔离, 跑一万次也不会下一单)。
 
 仓库: {{REPO_URL}}
-在线报告: {{REPORT_URL}}
+在线报告: https://mcd-when.app.workbuddy.host/
 
 ---
 
@@ -71,7 +71,7 @@
 测了 1240 次麦当劳官方接口, 确认一件事:
 10:15 到 10:44 之间存在「菜单真空带」——早餐收了, 午餐没开。
 这 29 分钟里, 你谁都不是。
-完整矩阵: {{REPORT_URL}}
+完整矩阵: https://mcd-when.app.workbuddy.host/
 
 **版本 B(工具梗)**:
 
@@ -89,7 +89,7 @@
 发现 10:15-10:44 之间早餐午餐都买不到(官方叫时段切换, 我叫它真空带🤣),
 还有 7 点开门但 7:14 前啥也点不了。
 
-图在这: {{REPORT_URL}}
+图在这: https://mcd-when.app.workbuddy.host/
 觉得有意思的话帮忙去 GitHub 点个 Star: {{REPO_URL}}
 在参加比赛, 前 100 名有汉堡回车键周边, 拜托了🙏
 
