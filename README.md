@@ -139,6 +139,13 @@ python src/now.py --city 上海
 - 想看看 MCP 能做什么的开发者 —— `data/tool-schemas.json` 里有一份官方没给的
   完整工具参数文档(35 个工具的 inputSchema 全量落盘)
 
+## Skill 化(可被 AI 客户端直接装载)
+
+`skill/SKILL.md` 是本项目的 Skill 封装，AI 客户端加载后可直接用自然语言问
+「现在还买得到早餐吗 / 此刻最便宜吃什么」并触发 `src/now.py`。
+它同时把真机验证过的接口事实（渠道枚举、单位、时段表解析陷阱、只读白名单）
+写进了上下文，避免重复探错。
+
 ## 技术说明
 
 - 零第三方依赖, 纯 Python 标准库, Python 3.10+ 直接跑
@@ -156,6 +163,9 @@ mcd-when/
 ├── MCP_INTEGRATION.md         MCP 调用链说明
 ├── mcp-config.example.json    MCP 配置示例(环境变量占位符)
 ├── config.example.json        普查配置示例(城市/渠道)
+├── skill/SKILL.md             Skill 封装(AI 客户端可装载)
+├── PROMO.md                   四平台宣发文案
+├── workbuddy.md               WorkBuddy 专项奖励说明
 ├── src/
 │   ├── mcd_client.py          Streamable HTTP MCP 客户端(零依赖)
 │   ├── discover.py            工具参数 schema 勘探
