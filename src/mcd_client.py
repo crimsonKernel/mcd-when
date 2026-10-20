@@ -29,15 +29,39 @@ class McdMcpError(RuntimeError):
     """麦当劳 MCP 调用错误(含 HTTP 状态码与 RPC 错误码)。"""
 
 
+class RateLimiter:
+    """跨线程共享的速率限制器(官方限制 600 次/分钟)。
+
+    全国普查要并发跑上百个城市, 每个线程一个 client 会把总速率叠上去;
+    把同一个 limiter 传给所有 client, 就能在并发的同时守住全局上限。
+    """
+
+    def __init__(self, per_minute: int = 480):
+        self.min_interval = 60.0 / per_minute
+        self._lock = __import__("threading").Lock()
+        self._last = 0.0
+
+    def wait(self) -> None:
+        import time as _t
+        with self._lock:
+            now = _t.monotonic()
+            delta = now - self._last
+            if delta < self.min_interval:
+                _t.sleep(self.min_interval - delta)
+            self._last = _t.monotonic()
+
+
 class McdMcpClient:
     def __init__(self, token: str, url: str = MCP_URL, timeout: float = 30.0,
-                 min_interval: float = 0.12, max_retries: int = 4):
+                 min_interval: float = 0.12, max_retries: int = 4,
+                 limiter: RateLimiter | None = None):
         if not token:
             raise McdMcpError("缺少 MCP Token。请先设置环境变量 MCD_MCP_TOKEN")
         self.url = url
         self.timeout = timeout
         self.min_interval = min_interval      # 两次请求最小间隔(秒), 600/min 的安全余量
         self.max_retries = max_retries
+        self.limiter = limiter
         self._headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -55,6 +79,8 @@ class McdMcpClient:
         if delta < self.min_interval:
             time.sleep(self.min_interval - delta)
         self._last_call_at = time.monotonic()
+        if self.limiter is not None:        # 并发普查时的全局闸门
+            self.limiter.wait()
 
     def _post(self, payload: dict[str, Any]) -> dict[str, Any] | None:
         """发送一条 JSON-RPC 消息。notification 返回 None。"""

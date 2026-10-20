@@ -1,8 +1,8 @@
 """
 render_card.py — 生成 README 首图用的卡片页 (dist/card.html), 再由浏览器截图成 images/heatmap.png
 
-首图体现产品的「问答式」形态: 顶部的城市/时间选择条 + 一张答案卡 + 一天四档速览。
-自包含(不 import render_report), 与 report.html 共用同一套浅色大众视觉。
+首图 = 一张「问答卡」+ 一天四档 + 三条全国实测发现。
+自包含, 与 report.html 共用同一套浅色大众视觉; 不依赖 JS(截图环境跑不了交互)。
 """
 
 from __future__ import annotations
@@ -12,210 +12,161 @@ from html import escape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SURFACE_PATH = ROOT / "data" / "surface.json"
+SURFACE_PATH = ROOT / "data" / "surface_national.json"
+LEGACY_PATH = ROOT / "data" / "surface.json"
 OUT_PATH = ROOT / "dist" / "card.html"
 
 PERIOD_STYLE = {
-    "早餐":   ("#FFF2D9", "#8A5300", "#F0C987", "🌅"),
-    "午餐":   ("#FFE6D6", "#A64400", "#F2B48A", "🍔"),
+    "早餐": ("#FFF2D9", "#8A5300", "#F0C987", "🌅"),
+    "午餐": ("#FFE6D6", "#A64400", "#F2B48A", "🍔"),
     "下午茶": ("#EFE6FF", "#5B3BA8", "#C9B6F5", "🍰"),
-    "夜市":   ("#DDEAFF", "#1D4F91", "#A9C6F2", "🌙"),
+    "夜市": ("#DDEAFF", "#1D4F91", "#A9C6F2", "🌙"),
 }
+
+SAMPLE_CITY = "上海"
+
+CSS = """
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#f6f7f9;color:#1f2329;width:1200px;
+ font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",
+  "Noto Sans CJK SC",system-ui,-apple-system,sans-serif;
+ font-size:16px;line-height:1.65}
+.card{width:1200px;background:#fff;padding:34px 40px 30px}
+h1{font-size:42px;margin:0 0 6px;letter-spacing:-.5px}
+.tag{display:inline-block;font-size:15px;font-weight:700;color:#1a7f37;
+ background:#e6f4ea;border:1px solid #b7e1c4;border-radius:20px;padding:4px 14px;margin:0 0 22px}
+.lead{font-size:17px;color:#3d4450;margin:0 0 24px}
+.ans{background:#f8fafc;border:1px solid #dfe5ee;border-radius:16px;padding:22px 26px;margin:0 0 20px}
+.state{display:inline-block;font-size:16px;font-weight:700;color:#14622c;background:#e6f4ea;
+ border:1px solid #b7e1c4;border-radius:10px;padding:6px 14px;margin:0 0 14px}
+.big{font-size:15px;color:#6b7280;margin:0 0 2px}
+.price{font-size:60px;font-weight:800;letter-spacing:-2px;line-height:1.1;margin:0;color:#14622c}
+.name{font-size:22px;font-weight:700;margin:2px 0 8px}
+.note{font-size:15px;color:#3d4450;margin:8px 0 0}
+.row{display:flex;gap:12px;margin:0 0 18px}
+.seg{flex:1;border-radius:14px;padding:14px 16px;border:1px solid}
+.seg .p{font-size:17px;font-weight:800;margin:0 0 2px}
+.seg .t{font-size:13.5px;margin:0;opacity:.85}
+.seg .v{font-size:26px;font-weight:800;margin:6px 0 0;font-variant-numeric:tabular-nums}
+.facts{border-top:1px solid #e3e6ec;padding-top:16px;display:flex;gap:26px}
+.fact{flex:1;font-size:15px;color:#3d4450;margin:0}
+.fact b{display:block;font-size:22px;color:#1f2329;margin:0 0 2px;font-variant-numeric:tabular-nums}
+.fact span{font-size:13.5px;color:#6b7280}
+"""
 
 
 def to_min(t: str) -> int:
-    h, m = t.split(":")
-    return int(h) * 60 + int(m)
+    try:
+        h, m = str(t).split(":")[:2]
+        return int(h) * 60 + int(m)
+    except (ValueError, IndexError):
+        return 0
 
 
-def fmt_span(a: str, b: str) -> str:
-    def trim(x: str) -> str:
-        return f"{int(x[:2])}:{x[3:]}" if x[:2].startswith("0") else x
-    return f"{trim(a)}–{trim(b)}"
-
-
-def cheapest(grid: dict, basket: list[dict], slots: list[str],
-             lo: str, hi: str, top: int = 1) -> list[tuple[str, int]]:
-    items: dict[str, int] = {}
-    for t in slots:
-        if not (to_min(lo) <= to_min(t) < to_min(hi)):
-            continue
-        row = grid.get(t) or {}
-        for it in basket:
-            cell = row.get(it["code"]) or {}
-            if "price" in cell:
-                prev = items.get(it["name"])
-                if prev is None or cell["price"] < prev:
-                    items[it["name"]] = cell["price"]
-    return sorted(items.items(), key=lambda x: x[1])[:top]
-
-
-def render_timeline(periods: list[dict], biz_start: str, biz_end: str) -> str:
-    if not periods:
-        return ""
-    start = min(to_min(periods[0]["start"]), to_min(biz_start or "00:00"))
-    end = max(to_min(periods[-1]["end"]), to_min(biz_end or "23:59"))
-    total = max(end - start, 1)
-    segs: list[tuple[str, int, int, str | None]] = []
-    cur = start
-    for p in periods:
-        a, b = to_min(p["start"]), to_min(p["end"])
-        if a > cur:
-            segs.append(("gap", cur, a, None))
-        segs.append(("p", a, b, p["name"]))
-        cur = b
-    if cur < end:
-        segs.append(("gap", cur, end, None))
-    cells, ticks = [], []
-    for kind, a, b, name in segs:
-        w = (b - a) / total * 100
-        if kind == "gap":
-            cells.append(f'<td class="gap" style="width:{w:.3f}%"></td>')
-            ticks.append(f'<td style="width:{w:.3f}%"></td>')
-        else:
-            bg, fg, bd, _ = PERIOD_STYLE.get(name or "", ("#f1f2f5", "#333", "#ddd", ""))
-            cells.append(f'<td style="width:{w:.3f}%;background:{bg};color:{fg};'
-                         f'border:1px solid {bd}">{escape(name or "")}</td>')
-            ticks.append(f'<td style="width:{w:.3f}%">{a // 60:02d}:{a % 60:02d}</td>')
-    ticks.append(f'<td style="width:0;text-align:right">{end // 60:02d}:{end % 60:02d}</td>')
-    cells.append('<td style="width:0;padding:0;border:0"></td>')
-    return (f'<table class="tl"><tr>{"".join(cells)}</tr></table>'
-            f'<table class="tl2"><tr>{"".join(ticks)}</tr></table>')
+def pick_sample(cities: list[dict]) -> dict:
+    for c in cities:
+        if c["city"] == SAMPLE_CITY and (c.get("floors", {}).get("pickup") or {}).get("早餐"):
+            return c
+    for c in cities:
+        if (c.get("floors", {}).get("pickup") or {}).get("早餐", {}).get("meal"):
+            return c
+    return cities[0]
 
 
 def main() -> int:
-    if not SURFACE_PATH.exists():
-        print(f"未找到 {SURFACE_PATH}。先运行 survey.py。")
+    path = SURFACE_PATH if SURFACE_PATH.exists() else LEGACY_PATH
+    if not path.exists():
+        print("缺少采集数据。")
         return 1
-    surface = json.loads(SURFACE_PATH.read_text(encoding="utf-8"))
-    cities = surface.get("cities") or []
+    s = json.loads(path.read_text(encoding="utf-8"))
+    cities = s.get("cities") or []
     if not cities:
-        print("surface.json 里没有城市数据。")
+        print("数据里没有城市。")
         return 1
-    city = cities[0]
-    store = city.get("store") or {}
-    periods = city.get("periods") or []
-    slots = city["slots"]
-    basket = city["basket"]
-    grid = (city.get("grid") or {}).get("pickup") or {}
-    n_points = sum(len(v) for c in cities for g in (c.get("grid") or {}).values() for v in g.values())
-    is_demo = bool(surface.get("isDemo"))
 
-    # 答案卡: 取午餐档作示范(信息量最饱满的时段)
-    demo_p = next((p for p in periods if p["name"] == "午餐"), periods[min(1, len(periods) - 1)])
-    demo_t = next((t for t in slots if to_min(demo_p["start"]) <= to_min(t) < to_min(demo_p["end"])),
-                  slots[len(slots) // 2])
-    demo_items = cheapest(grid, basket, [demo_t], demo_p["start"], demo_p["end"], top=4)
-    best = demo_items[0] if demo_items else ("—", 0)
+    n_cities = len(cities)
+    n_calls = sum(c.get("calls", 0) for c in cities)
+    c = pick_sample(cities)
+    fl = (c.get("floors", {}).get("pickup") or {})
+    periods = c.get("periods") or []
 
-    cards = []
+    bf = (fl.get("早餐") or {}).get("meal")
+    lunch = (fl.get("午餐") or {}).get("meal")
+    save = (lunch["price"] - bf["price"]) / 100 if (bf and lunch and lunch["price"] > bf["price"]) else 0
+
+    segs = []
     for p in periods:
-        bg, fg, bd, icon = PERIOD_STYLE.get(p["name"], ("#f1f2f5", "#333", "#ddd", "🍟"))
-        b1 = cheapest(grid, basket, slots, p["start"], p["end"], top=1)
-        price = f"¥{b1[0][1] / 100:.2f}" if b1 else "—"
-        name = escape(b1[0][0]) if b1 else "无在售商品"
-        on = " on" if p["name"] == demo_p["name"] else ""
-        cards.append(
-            f'<div class="pc{on}" style="background:{bg};color:{fg};border-color:{bd}">'
-            f'<div class="pn">{icon} {escape(p["name"])}</div>'
-            f'<div class="pt">{escape(fmt_span(p["start"], p["end"]))}</div>'
-            f'<div class="pp">{price}</div>'
-            f'<div class="pi">{name}</div></div>')
+        bg, fg, bd, icon = PERIOD_STYLE.get(p["name"], ("#f0f2f5", "#333", "#ccc", "•"))
+        f = (fl.get(p["name"]) or {}).get("meal")
+        v = f"¥{f['price'] / 100:.2f}" if f else "—"
+        nm = f["name"][:10] if f else ""
+        segs.append(
+            f'<div class="seg" style="background:{bg};color:{fg};border-color:{bd}">'
+            f'<p class="p">{icon} {escape(p["name"])} '
+            f'<span style="font-weight:600">{escape(p["start"])}–{escape(p["end"])}</span></p>'
+            f'<p class="v">{v}</p><p class="t">{escape(nm)}</p></div>')
 
-    tl = render_timeline(periods, store.get("businessStart") or "00:00",
-                         store.get("businessEnd") or "23:59")
-    badge = "示例价格" if is_demo else "✓ 真实价格 · 逐笔实测"
-    others = "　".join(escape(c["city"]) for c in cities[1:4])
+    # 全国发现
+    bf_cities = [(x["city"], x["periods"][0]["start"]) for x in cities
+                 if x.get("periods") and x["periods"][0]["name"] == "早餐"]
+    earliest = min(bf_cities, key=lambda x: to_min(x[1])) if bf_cities else ("—", "—")
+    latest = max(bf_cities, key=lambda x: to_min(x[1])) if bf_cities else ("—", "—")
+    lunches = [(x["city"], (x.get("floors", {}).get("pickup") or {}).get("午餐", {}).get("meal"))
+               for x in cities]
+    lunches = [(a, b) for a, b in lunches if b]
+    cheapest = min(lunches, key=lambda x: x[1]["price"]) if lunches else ("—", None)
+    priciest = max(lunches, key=lambda x: x[1]["price"]) if lunches else ("—", None)
 
-    html = f"""<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>card</title>
-<style>
-*{{box-sizing:border-box}}
-body{{margin:0;background:#f6f7f9;display:flex;align-items:center;justify-content:center;
- min-height:100vh;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
- word-break:break-word}}
-.card{{width:1180px;background:#fff;border:1px solid #e3e6ec;border-radius:22px;
- padding:32px 40px 28px;box-shadow:0 10px 34px rgba(20,30,60,.07)}}
-h1{{font-size:36px;margin:0 0 6px;letter-spacing:-.5px;color:#1f2329}}
-.sub{{font-size:15.5px;color:#6b7280;margin:0 0 16px}}
-.badge{{display:inline-block;background:#e6f4ea;color:#1a7f37;border:1px solid #b7e1c4;
- border-radius:20px;padding:2px 12px;font-size:13px;font-weight:700;vertical-align:middle}}
-.badge.demo{{background:#fff4ce;color:#8a6100;border-color:#f0d999}}
-.qbar{{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fafbfc;
- border:1px solid #eceef3;border-radius:12px;padding:12px 14px;margin:0 0 16px}}
-.qlab{{font-size:13px;color:#6b7280;font-weight:700}}
-.chip{{padding:6px 14px;border:1px solid #d7dbe3;border-radius:20px;background:#fff;
- font-size:14.5px;color:#1f2329}}
-.chip.on{{background:#1D4F91;border-color:#1D4F91;color:#fff;font-weight:700}}
-.sel{{padding:6px 12px;border:1px solid #d7dbe3;border-radius:10px;background:#fff;font-size:14.5px}}
-.two{{display:flex;gap:16px;align-items:stretch}}
-.answer{{flex:0 0 340px;background:#f6fff9;border:1px solid #b7e1c4;border-radius:16px;
- padding:16px 18px}}
-.st{{font-size:14px;font-weight:700;color:#14622c;margin:0 0 10px}}
-.big{{font-size:13.5px;color:#6b7280;margin:0}}
-.ansprice{{font-size:42px;font-weight:800;letter-spacing:-1.5px;color:#14622c;margin:0;
- font-variant-numeric:tabular-nums;line-height:1.15}}
-.ansname{{font-size:17px;font-weight:700;margin:0 0 10px}}
-ul{{margin:0;padding:0;list-style:none;border-top:1px solid #d9efe1}}
-li{{display:flex;justify-content:space-between;gap:10px;padding:7px 0;
- border-bottom:1px solid #d9efe1;font-size:14px}}
-li span.p{{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}}
-.right{{flex:1;min-width:0}}
-.row{{display:flex;gap:12px;margin:0 0 10px}}
-.pc{{flex:1;border:1px solid;border-radius:14px;padding:12px 14px}}
-.pc.on{{box-shadow:0 0 0 3px rgba(29,79,145,.18)}}
-.pn{{font-size:14px;font-weight:700}}
-.pt{{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;margin:1px 0 6px}}
-.pp{{font-size:26px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums}}
-.pi{{font-size:13px;font-weight:600}}
-.tl{{width:100%;border-collapse:collapse;table-layout:fixed;margin:4px 0 2px}}
-.tl td{{border:0;padding:0;height:28px;text-align:center;font-size:12.5px;font-weight:700;
- overflow:hidden;white-space:nowrap}}
-.tl td.gap{{background:repeating-linear-gradient(45deg,#f0f1f4,#f0f1f4 5px,#e2e4ea 5px,#e2e4ea 10px)}}
-.tl2{{width:100%;border-collapse:collapse;table-layout:fixed}}
-.tl2 td{{border:0;padding:0;font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden}}
-.foot{{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;gap:16px}}
-.note{{font-size:12.5px;color:#6b7280;margin:0}}
-.src{{font-size:12px;color:#9aa1ad;margin:0;white-space:nowrap}}
-</style></head><body>
-<div class="card">
-  <h1>麦当劳几点最便宜 <span class="badge{' demo' if is_demo else ''}">{badge}</span></h1>
-  <p class="sub">选城市和几点去，只告诉你那一刻能点什么、最便宜的一口多少钱 ——
-  {len(cities)} 座城市 · 全天 {n_points} 次逐笔问价</p>
+    def med(pname: str) -> int | None:
+        vals = sorted(m["price"] for x in cities
+                      for m in [(x.get("floors", {}).get("pickup") or {}).get(pname, {}).get("meal")]
+                      if m)
+        return vals[len(vals) // 2] if vals else None
 
-  <div class="qbar">
-    <span class="qlab">你在哪个城市</span>
-    <span class="chip on">{escape(city["city"])}</span>
-    <span class="chip">{others}</span>
-    <span class="qlab">几点去</span>
-    <span class="sel">{escape(demo_t)}</span>
-  </div>
+    bf_med, lunch_med = med("早餐"), med("午餐")
 
-  <div class="two">
-    <div class="answer">
-      <p class="st">{escape(demo_p["name"])}档 {escape(demo_p["start"])}–{escape(demo_p["end"])}</p>
-      <p class="big">这一刻最便宜的一口</p>
-      <p class="ansprice">¥{best[1] / 100:.2f}</p>
-      <p class="ansname">{escape(best[0])}</p>
-      <ul>{"".join(f'<li><span>{escape(n)}</span><span class="p">¥{p / 100:.2f}</span></li>' for n, p in demo_items)}</ul>
-    </div>
-    <div class="right">
-      <div class="row">{''.join(cards)}</div>
-      {tl}
-      <p class="note">灰色斜纹 = 空档：上一档已收、下一档未开，两种都点不到。</p>
-    </div>
-  </div>
+    facts = (
+        f'<div class="fact"><b>{escape(earliest[1])} / {escape(latest[1])}</b>'
+        f'<span>早餐开档最早 {escape(earliest[0])}，最晚 {escape(latest[0])}，'
+        f'差 {int((to_min(latest[1]) - to_min(earliest[1])) / 60)} 小时</span></div>'
+        + (f'<div class="fact"><b>¥{bf_med / 100:.2f} → ¥{lunch_med / 100:.2f}</b>'
+           f'<span>{len([1 for x in cities if (x.get("floors", {}).get("pickup") or {}).get("早餐", {}).get("meal")])}'
+           f' 座城市的早餐地板价中位数 → 午餐中位数，早去更便宜</span></div>'
+           if bf_med and lunch_med else "")
+        + (f'<div class="fact"><b>¥{cheapest[1]["price"] / 100:.2f} / '
+           f'¥{priciest[1]["price"] / 100:.2f}</b>'
+           f'<span>午餐地板价最低 {escape(cheapest[0])}，最高 {escape(priciest[0])}</span></div>'
+           if cheapest[1] and priciest[1] else "")
+        + f'<div class="fact"><b>{n_cities} 城 · {n_calls} 次</b>'
+        f'<span>向麦当劳订餐系统问价，全程只读、不下单</span></div>')
 
-  <div class="foot">
-    <p class="note">示例门店：{escape(city["city"])} · {escape(store.get("name", ""))}</p>
-    <p class="src">价格逐笔取自麦当劳订餐系统实时问价 · 只读采集 · 非官方产品</p>
-  </div>
-</div>
-</body></html>"""
+    ans = ""
+    if bf:
+        ans = (f'<div class="ans"><span class="state">{escape(c["city"])} · 早餐档 '
+               f'{escape(periods[0]["start"])}–{escape(periods[0]["end"])}</span>'
+               f'<p class="big">这一档最便宜的一餐</p>'
+               f'<p class="price">¥{bf["price"] / 100:.2f}</p>'
+               f'<p class="name">{escape(bf["name"])}</p>'
+               + (f'<p class="note">同一家店午餐档最便宜的一餐 ¥{lunch["price"] / 100:.2f}'
+                  f'（{escape(lunch["name"])}）—— 早餐去能省 <b>¥{save:.2f}</b>。</p>'
+                  if save else "")
+               + "</div>")
+
+    html = f"""<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<style>{CSS}</style></head><body><div class="card">
+<h1>麦当劳几点最便宜</h1>
+<span class="tag">✓ 全国 {n_cities} 座城市 · 真实价格 · 逐笔实测</span>
+<p class="lead">选城市和几点去，直接告诉你那一刻最便宜能点什么 —— 麦当劳的菜单按时段切换，
+早餐档和午餐档的地板价差出一顿早餐钱。</p>
+{ans}
+<div class="row">{"".join(segs)}</div>
+<div class="facts">{facts}</div>
+</div></body></html>"""
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(html, encoding="utf-8")
-    print(f"已生成 {OUT_PATH} (截图: --window-size=1280,760)")
+    print(f"已生成 {OUT_PATH} ({OUT_PATH.stat().st_size // 1024} KB)")
     return 0
 
 

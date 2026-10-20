@@ -15,27 +15,39 @@ Mcp-Session-Id 会话保持、429 退避)。
 
 ## 使用的 Tool 清单与调用流程
 
-### 普查主链路(survey.py, 一次运行 = 明天全天)
+### 全国普查主链路(probe_cities.py + survey_national.py)
 
 ```
-now-time-info                 校时: 以服务端时间为准, 目标日期 = 服务端明天
+now-time-info                  校时: 以服务端时间为准, 目标日期 = 服务端明天
       │
-query-nearby-stores           城市+关键词定位门店(beType=1 自提 / beType=5 得来速)
-      │                        返回 reservationTimeOptions —— 官方时段边界, 直接入图
-      │
-query-meals (×锚点时刻)        在 6 个锚点时刻拉菜单, 圈定探针商品:
-      │                        时段专属(早餐/下午茶/夜市/超值/随心配) + 全天常驻
-      │
-query-meal-detail (×商品)      按商品各自可售时段取名称与组成
-      │
-calculate-price (逐格)         31 时刻 × ~20 商品 × 2 渠道 逐格核价
-      │                        reservationDate=明天各时刻; 失败=「不可售」, 这本身就是数据
+query-nearby-stores (×城市)     按城市批量探测门店是否覆盖, 并取回:
+      │                          营业时间 + reservationTimeOptions(官方时段边界)
+      │                          一次调用就能拿到「这座城市有没有麦当劳、几点开门」
       ▼
-data/surface.json → render_report.py → dist/report.html
+      ┌──────────────────────────────────────────────┐
+      │ 每座城市:                                     │
+      │ query-meals     × 每档中点  → 该档在售全量菜单 │
+      │ query-meal-detail × 探针商品 → 名称/分类       │
+      │ calculate-price × (商品×它出现的档) → 价格     │
+      │                  × 得来速首档 → 渠道价差       │
+      └──────────────────────────────────────────────┘
+      ▼
+data/surface_national.json → render_report.py → dist/report.html
 ```
 
-**关键机制**: `reservationDate` 允许指定未来任意时刻(格式 `yyyy-MM-dd HH:mm`),
+**关键机制一**: `reservationDate` 允许指定未来任意时刻(格式 `yyyy-MM-dd HH:mm`),
 因此不需要挂 7 天定时任务 —— 今天就能把明天从开门到打烊的每个时刻全部核价。
+
+**关键机制二(让全国铺开成为可能)**: 先做了 5 城 7000 点的地毯式普查, 得到一个实测结论 ——
+**同一商品的价格在一天之内恒定, 变化的只是「这个时段卖不卖」**(20 个探针商品,
+0 个出现时段差价)。于是没必要「31 时刻 × 20 商品」地毯轰炸: 每个时段拉一次菜单就知道
+这一档卖什么, 每个商品只需在它出现的档核价即可。单城调用量从 ~1200 次降到 ~70 次,
+上百座城市才跑得动。
+
+### 验证链路(survey.py, 保留作为基准)
+
+`src/survey.py` 仍保留最初的全时刻地毯式采集(31–48 个时刻 × 20 商品 × 2 渠道),
+用于交叉验证「档内价格恒定」这条假设 —— 全国版跑得动, 是建立在它被验证过的基础上。
 
 ### 辅助链路
 

@@ -1,85 +1,38 @@
-<!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>card</title>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f6f7f9;display:flex;align-items:center;justify-content:center;
- min-height:100vh;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
- word-break:break-word}
-.card{width:1180px;background:#fff;border:1px solid #e3e6ec;border-radius:22px;
- padding:32px 40px 28px;box-shadow:0 10px 34px rgba(20,30,60,.07)}
-h1{font-size:36px;margin:0 0 6px;letter-spacing:-.5px;color:#1f2329}
-.sub{font-size:15.5px;color:#6b7280;margin:0 0 16px}
-.badge{display:inline-block;background:#e6f4ea;color:#1a7f37;border:1px solid #b7e1c4;
- border-radius:20px;padding:2px 12px;font-size:13px;font-weight:700;vertical-align:middle}
-.badge.demo{background:#fff4ce;color:#8a6100;border-color:#f0d999}
-.qbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fafbfc;
- border:1px solid #eceef3;border-radius:12px;padding:12px 14px;margin:0 0 16px}
-.qlab{font-size:13px;color:#6b7280;font-weight:700}
-.chip{padding:6px 14px;border:1px solid #d7dbe3;border-radius:20px;background:#fff;
- font-size:14.5px;color:#1f2329}
-.chip.on{background:#1D4F91;border-color:#1D4F91;color:#fff;font-weight:700}
-.sel{padding:6px 12px;border:1px solid #d7dbe3;border-radius:10px;background:#fff;font-size:14.5px}
-.two{display:flex;gap:16px;align-items:stretch}
-.answer{flex:0 0 340px;background:#f6fff9;border:1px solid #b7e1c4;border-radius:16px;
- padding:16px 18px}
-.st{font-size:14px;font-weight:700;color:#14622c;margin:0 0 10px}
-.big{font-size:13.5px;color:#6b7280;margin:0}
-.ansprice{font-size:42px;font-weight:800;letter-spacing:-1.5px;color:#14622c;margin:0;
- font-variant-numeric:tabular-nums;line-height:1.15}
-.ansname{font-size:17px;font-weight:700;margin:0 0 10px}
-ul{margin:0;padding:0;list-style:none;border-top:1px solid #d9efe1}
-li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;
- border-bottom:1px solid #d9efe1;font-size:14px}
-li span.p{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-.right{flex:1;min-width:0}
-.row{display:flex;gap:12px;margin:0 0 10px}
-.pc{flex:1;border:1px solid;border-radius:14px;padding:12px 14px}
-.pc.on{box-shadow:0 0 0 3px rgba(29,79,145,.18)}
-.pn{font-size:14px;font-weight:700}
-.pt{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;margin:1px 0 6px}
-.pp{font-size:26px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums}
-.pi{font-size:13px;font-weight:600}
-.tl{width:100%;border-collapse:collapse;table-layout:fixed;margin:4px 0 2px}
-.tl td{border:0;padding:0;height:28px;text-align:center;font-size:12.5px;font-weight:700;
- overflow:hidden;white-space:nowrap}
-.tl td.gap{background:repeating-linear-gradient(45deg,#f0f1f4,#f0f1f4 5px,#e2e4ea 5px,#e2e4ea 10px)}
-.tl2{width:100%;border-collapse:collapse;table-layout:fixed}
-.tl2 td{border:0;padding:0;font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden}
-.foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;gap:16px}
-.note{font-size:12.5px;color:#6b7280;margin:0}
-.src{font-size:12px;color:#9aa1ad;margin:0;white-space:nowrap}
-</style></head><body>
-<div class="card">
-  <h1>麦当劳几点最便宜 <span class="badge">✓ 真实价格 · 逐笔实测</span></h1>
-  <p class="sub">选城市和几点去，只告诉你那一刻能点什么、最便宜的一口多少钱 ——
-  5 座城市 · 全天 7000 次逐笔问价</p>
-
-  <div class="qbar">
-    <span class="qlab">你在哪个城市</span>
-    <span class="chip on">上海</span>
-    <span class="chip">北京　广州　成都</span>
-    <span class="qlab">几点去</span>
-    <span class="sel">11:00</span>
-  </div>
-
-  <div class="two">
-    <div class="answer">
-      <p class="st">午餐档 10:44–14:15</p>
-      <p class="big">这一刻最便宜的一口</p>
-      <p class="ansprice">¥11.90</p>
-      <p class="ansname">蘸酱炸鸡</p>
-      <ul><li><span>蘸酱炸鸡</span><span class="p">¥11.90</span></li><li><span>麦咖啡™冰奶铁中杯</span><span class="p">¥13.90</span></li><li><span>冰浓浓黑巧中杯</span><span class="p">¥13.90</span></li><li><span>精选超值随心配</span><span class="p">¥13.90</span></li></ul>
-    </div>
-    <div class="right">
-      <div class="row"><div class="pc" style="background:#FFF2D9;color:#8A5300;border-color:#F0C987"><div class="pn">🌅 早餐</div><div class="pt">7:14–10:15</div><div class="pp">¥9.90</div><div class="pi">芝芝火腿扒堡组合</div></div><div class="pc on" style="background:#FFE6D6;color:#A64400;border-color:#F2B48A"><div class="pn">🍔 午餐</div><div class="pt">10:44–14:15</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div><div class="pc" style="background:#EFE6FF;color:#5B3BA8;border-color:#C9B6F5"><div class="pn">🍰 下午茶</div><div class="pt">14:44–16:45</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div><div class="pc" style="background:#DDEAFF;color:#1D4F91;border-color:#A9C6F2"><div class="pn">🌙 夜市</div><div class="pt">17:14–21:45</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div></div>
-      <table class="tl"><tr><td class="gap" style="width:1.556%"></td><td style="width:20.111%;background:#FFF2D9;color:#8A5300;border:1px solid #F0C987">早餐</td><td class="gap" style="width:3.222%"></td><td style="width:23.444%;background:#FFE6D6;color:#A64400;border:1px solid #F2B48A">午餐</td><td class="gap" style="width:3.222%"></td><td style="width:13.444%;background:#EFE6FF;color:#5B3BA8;border:1px solid #C9B6F5">下午茶</td><td class="gap" style="width:3.222%"></td><td style="width:30.111%;background:#DDEAFF;color:#1D4F91;border:1px solid #A9C6F2">夜市</td><td class="gap" style="width:1.667%"></td><td style="width:0;padding:0;border:0"></td></tr></table><table class="tl2"><tr><td style="width:1.556%"></td><td style="width:20.111%">07:14</td><td style="width:3.222%"></td><td style="width:23.444%">10:44</td><td style="width:3.222%"></td><td style="width:13.444%">14:44</td><td style="width:3.222%"></td><td style="width:30.111%">17:14</td><td style="width:1.667%"></td><td style="width:0;text-align:right">22:00</td></tr></table>
-      <p class="note">灰色斜纹 = 空档：上一档已收、下一档未开，两种都点不到。</p>
-    </div>
-  </div>
-
-  <div class="foot">
-    <p class="note">示例门店：上海 · 麦当劳上海闸北曲阜路大悦城餐厅</p>
-    <p class="src">价格逐笔取自麦当劳订餐系统实时问价 · 只读采集 · 非官方产品</p>
-  </div>
-</div>
-</body></html>
+html,body{margin:0;padding:0}
+body{background:#f6f7f9;color:#1f2329;width:1200px;
+ font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",
+  "Noto Sans CJK SC",system-ui,-apple-system,sans-serif;
+ font-size:16px;line-height:1.65}
+.card{width:1200px;background:#fff;padding:34px 40px 30px}
+h1{font-size:42px;margin:0 0 6px;letter-spacing:-.5px}
+.tag{display:inline-block;font-size:15px;font-weight:700;color:#1a7f37;
+ background:#e6f4ea;border:1px solid #b7e1c4;border-radius:20px;padding:4px 14px;margin:0 0 22px}
+.lead{font-size:17px;color:#3d4450;margin:0 0 24px}
+.ans{background:#f8fafc;border:1px solid #dfe5ee;border-radius:16px;padding:22px 26px;margin:0 0 20px}
+.state{display:inline-block;font-size:16px;font-weight:700;color:#14622c;background:#e6f4ea;
+ border:1px solid #b7e1c4;border-radius:10px;padding:6px 14px;margin:0 0 14px}
+.big{font-size:15px;color:#6b7280;margin:0 0 2px}
+.price{font-size:60px;font-weight:800;letter-spacing:-2px;line-height:1.1;margin:0;color:#14622c}
+.name{font-size:22px;font-weight:700;margin:2px 0 8px}
+.note{font-size:15px;color:#3d4450;margin:8px 0 0}
+.row{display:flex;gap:12px;margin:0 0 18px}
+.seg{flex:1;border-radius:14px;padding:14px 16px;border:1px solid}
+.seg .p{font-size:17px;font-weight:800;margin:0 0 2px}
+.seg .t{font-size:13.5px;margin:0;opacity:.85}
+.seg .v{font-size:26px;font-weight:800;margin:6px 0 0;font-variant-numeric:tabular-nums}
+.facts{border-top:1px solid #e3e6ec;padding-top:16px;display:flex;gap:26px}
+.fact{flex:1;font-size:15px;color:#3d4450;margin:0}
+.fact b{display:block;font-size:22px;color:#1f2329;margin:0 0 2px;font-variant-numeric:tabular-nums}
+.fact span{font-size:13.5px;color:#6b7280}
+</style></head><body><div class="card">
+<h1>麦当劳几点最便宜</h1>
+<span class="tag">✓ 全国 281 座城市 · 真实价格 · 逐笔实测</span>
+<p class="lead">选城市和几点去，直接告诉你那一刻最便宜能点什么 —— 麦当劳的菜单按时段切换，
+早餐档和午餐档的地板价差出一顿早餐钱。</p>
+<div class="ans"><span class="state">上海 · 早餐档 07:14–10:15</span><p class="big">这一档最便宜的一餐</p><p class="price">¥9.90</p><p class="name">芝芝火腿扒堡组合</p><p class="note">同一家店午餐档最便宜的一餐 ¥14.90（人气经典随心配）—— 早餐去能省 <b>¥5.00</b>。</p></div>
+<div class="row"><div class="seg" style="background:#FFF2D9;color:#8A5300;border-color:#F0C987"><p class="p">🌅 早餐 <span style="font-weight:600">07:14–10:15</span></p><p class="v">¥9.90</p><p class="t">芝芝火腿扒堡组合</p></div><div class="seg" style="background:#FFE6D6;color:#A64400;border-color:#F2B48A"><p class="p">🍔 午餐 <span style="font-weight:600">10:44–14:15</span></p><p class="v">¥14.90</p><p class="t">人气经典随心配</p></div><div class="seg" style="background:#EFE6FF;color:#5B3BA8;border-color:#C9B6F5"><p class="p">🍰 下午茶 <span style="font-weight:600">14:44–16:45</span></p><p class="v">¥14.90</p><p class="t">人气经典随心配</p></div><div class="seg" style="background:#DDEAFF;color:#1D4F91;border-color:#A9C6F2"><p class="p">🌙 夜市 <span style="font-weight:600">17:14–21:45</span></p><p class="v">¥14.90</p><p class="t">人气经典随心配</p></div></div>
+<div class="facts"><div class="fact"><b>05:14 / 09:14</b><span>早餐开档最早 兰州，最晚 福州，差 4 小时</span></div><div class="fact"><b>¥9.90 → ¥11.90</b><span>268 座城市的早餐地板价中位数 → 午餐中位数，早去更便宜</span></div><div class="fact"><b>¥11.90 / ¥49.00</b><span>午餐地板价最低 北京，最高 拉萨</span></div><div class="fact"><b>281 城 · 15374 次</b><span>向麦当劳订餐系统问价，全程只读、不下单</span></div></div>
+</div></body></html>
