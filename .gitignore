@@ -11,3 +11,5 @@ __pycache__/
 
 # 本地配置(含个人地址关键词)
 config.json
+survey_*.log
+*.log
