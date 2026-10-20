@@ -29,14 +29,21 @@ def to_min(t: str) -> int:
     return int(h) * 60 + int(m)
 
 
-def cell_style(price, row_min, row_max):
-    """行内归一化的绿->黄->红色阶。"""
-    if row_max is None or row_max == row_min:
-        ratio = 0.0
-    else:
-        ratio = (price - row_min) / (row_max - row_min)
-    hue = int(140 - 135 * ratio)
-    return f"background:hsl({hue},55%,26%);color:hsl({hue},70%,82%)"
+# 时段配色(与 render_card.py 首图一致): 背景(深) + 前景(亮)
+PERIOD_COLORS = {
+    "早餐": ("#1d3f66", "#9cc8fb"),
+    "午餐": ("#6b3a10", "#f7c890"),
+    "下午茶": ("#45265e", "#d5b3f5"),
+    "夜市": ("#134b41", "#7ef0dd"),
+}
+
+
+def period_of(t: str, periods: list[dict]) -> dict | None:
+    m = to_min(t)
+    for p in periods:
+        if to_min(p["start"]) <= m < to_min(p["end"]):
+            return p
+    return None
 
 
 def render_city(city: dict) -> str:
@@ -92,35 +99,30 @@ def render_city(city: dict) -> str:
                 f'<tbody>{"".join(rows)}</tbody></table></details>')
     html.extend(findings)
 
-    # 热力矩阵(每渠道一节)
+    # 热力矩阵(每渠道一节) —— 时段着色: 颜色编码「这一刻属于哪个档」
     for ch in city["channels"]:
         g = grid.get(ch["id"]) or {}
         html.append(f'<h3>{escape(ch["label"])}</h3><div class="matrix-wrap"><table class="matrix">')
         head = "".join(f'<th class="slot{gap_class(t)}">{escape(t)}</th>' for t in slots)
         html.append(f'<thead><tr><th class="item">商品 \\ 时刻</th>{head}</tr></thead><tbody>')
         for it in basket:
-            row_prices: list[int] = []
-            for t in slots:
-                cell = (g.get(t) or {}).get(it["code"]) or {}
-                if "price" in cell:
-                    row_prices.append(cell["price"])
-            rmin = min(row_prices) if row_prices else None
-            rmax = max(row_prices) if row_prices else None
             cells = []
             for t in slots:
                 cell = (g.get(t) or {}).get(it["code"]) or {}
                 if "price" in cell:
-                    p = cell["price"] / 100
-                    cells.append(f'<td style="{cell_style(cell["price"], rmin, rmax)}" '
-                                 f'title="{escape(it["name"])} @ {escape(t)}">¥{p:.2f}</td>')
+                    p = period_of(t, periods)
+                    bg, fg = PERIOD_COLORS.get(p["name"], ("#2a2f3a", "#aab")) if p else ("#2a2f3a", "#aab")
+                    cells.append(f'<td style="background:{bg};color:{fg}" '
+                                 f'title="{escape(it["name"])} @ {escape(t)}">¥{cell["price"] / 100:.2f}</td>')
                 else:
                     msg = escape(str(cell.get("unavailable", "")))
                     cells.append(f'<td class="na{gap_class(t)}" title="{msg}">—</td>')
             html.append(f'<tr><th class="item">{escape(it["name"])}</th>{"".join(cells)}</tr>')
         html.append("</tbody></table></div>")
 
-    html.append('<p class="note">— = 该时刻不可售(菜单断崖/营业外)。颜色按「同一商品全天价差」归一化: '
-                '绿=最便宜, 红=最贵。所有金额均为 calculate-price 实时返回, 已换算为元。</p>')
+    html.append('<p class="note">— = 该时刻不可售(菜单断崖/营业外)。颜色按「所属时段」编码: '
+                '蓝=早餐, 橙=午餐, 紫=下午茶, 青=夜市; 颜色分界即菜单断崖。'
+                '所有金额均为 calculate-price 实时返回, 已换算为元。</p>')
     html.append("</section>")
     return "".join(html)
 
@@ -171,6 +173,8 @@ details table td.price{{font-weight:700;color:#5ee6a0}}
 .matrix th.slot{{font-size:10px;color:#aeb7c6}}
 .matrix td.na{{color:#5c6472;background:#20242c}}
 .matrix th.slot.gap,.matrix td.gap{{border-top:2px dashed #b78aff}}
+.matrix td.hl,.matrix th.hl{{outline:1.5px solid #7ef0dd;outline-offset:-1.5px;
+ filter:brightness(1.45)}}
 footer{{max-width:1500px;margin:10px auto;color:var(--dim);font-size:11px}}
 </style></head><body>
 <header>
@@ -181,6 +185,24 @@ footer{{max-width:1500px;margin:10px auto;color:var(--dim);font-size:11px}}
 <footer>数据来源: 麦当劳中国官方 MCP (https://mcp.mcd.cn), calculate-price 实时返回 ·
 生成于 {escape(str(SURFACE.get('generatedAt', datetime.now().isoformat(timespec='seconds'))))} ·
 目标日期 {escape(str(SURFACE.get('targetDate', '')))} · 只读采集, 未产生任何真实订单</footer>
+<script>
+document.querySelectorAll('table.matrix').forEach(function(tb){{
+  tb.addEventListener('mouseover',function(e){{
+    var td=e.target.closest('td');
+    tb.querySelectorAll('.hl').forEach(function(x){{x.classList.remove('hl')}});
+    if(!td)return;
+    var idx=td.cellIndex;
+    tb.querySelectorAll('tr').forEach(function(tr){{
+      if(tr.children[idx])tr.children[idx].classList.add('hl');
+    }});
+    var head=td.closest('tr').querySelector('th.item');
+    if(head)head.classList.add('hl');
+  }});
+  tb.addEventListener('mouseleave',function(){{
+    tb.querySelectorAll('.hl').forEach(function(x){{x.classList.remove('hl')}});
+  }});
+}});
+</script>
 </body></html>"""
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
