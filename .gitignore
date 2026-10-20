@@ -1,0 +1,13 @@
+# 凭证 —— 绝不入库
+.env
+*.token
+
+# 原始采样数据(含门店等个人信息, 且量大)
+snapshots/
+
+# Python
+__pycache__/
+*.pyc
+
+# 本地配置(含个人地址关键词)
+config.json

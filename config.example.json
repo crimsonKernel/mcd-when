@@ -1,0 +1,12 @@
+{
+  "_comment": "mcd-when 配置(可选)。复制为 config.json 后可修改; config.json 已被 .gitignore 排除。命令行 --city 参数优先于此处。",
+  "defaultCities": ["上海"],
+  "storeKeyword": "麦当劳",
+  "channels": {
+    "pickup": { "enabled": true,  "label": "到店自提", "beType": 1, "orderType": 1 },
+    "driveThrough": { "enabled": true, "label": "得来速", "beType": 5, "orderType": 1 }
+  },
+  "_deliveryNote": "外送(麦乐送)需要账号收货地址派生 beCode, 属于用户个人配置, 当前版本不采集。",
+  "maxItems": 20,
+  "slotStepMinutes": 30
+}
