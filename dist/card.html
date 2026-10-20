@@ -3,41 +3,82 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#f6f7f9;display:flex;align-items:center;justify-content:center;
- min-height:100vh;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+ min-height:100vh;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+ word-break:break-word}
 .card{width:1180px;background:#fff;border:1px solid #e3e6ec;border-radius:22px;
- padding:34px 40px 30px;box-shadow:0 10px 34px rgba(20,30,60,.07)}
-h1{font-size:38px;margin:0 0 6px;letter-spacing:-.5px;color:#1f2329}
-.sub{font-size:16px;color:#6b7280;margin:0 0 4px}
+ padding:32px 40px 28px;box-shadow:0 10px 34px rgba(20,30,60,.07)}
+h1{font-size:36px;margin:0 0 6px;letter-spacing:-.5px;color:#1f2329}
+.sub{font-size:15.5px;color:#6b7280;margin:0 0 16px}
 .badge{display:inline-block;background:#e6f4ea;color:#1a7f37;border:1px solid #b7e1c4;
  border-radius:20px;padding:2px 12px;font-size:13px;font-weight:700;vertical-align:middle}
 .badge.demo{background:#fff4ce;color:#8a6100;border-color:#f0d999}
-.row{display:flex;gap:14px;margin:22px 0 8px}
-.pc{flex:1;border:1px solid;border-radius:16px;padding:16px 18px 14px}
-.pn{font-size:15px;font-weight:700}
-.pt{font-size:22px;font-weight:800;letter-spacing:-.5px;margin:2px 0 8px;
- font-variant-numeric:tabular-nums}
-.pp{font-size:34px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums}
-.pi{font-size:14.5px;font-weight:600;margin-top:2px}
-.tl{width:100%;border-collapse:collapse;table-layout:fixed;margin:14px 0 2px}
-.tl td{border:0;padding:0;height:32px;text-align:center;font-size:13.5px;font-weight:700;
+.qbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fafbfc;
+ border:1px solid #eceef3;border-radius:12px;padding:12px 14px;margin:0 0 16px}
+.qlab{font-size:13px;color:#6b7280;font-weight:700}
+.chip{padding:6px 14px;border:1px solid #d7dbe3;border-radius:20px;background:#fff;
+ font-size:14.5px;color:#1f2329}
+.chip.on{background:#1D4F91;border-color:#1D4F91;color:#fff;font-weight:700}
+.sel{padding:6px 12px;border:1px solid #d7dbe3;border-radius:10px;background:#fff;font-size:14.5px}
+.two{display:flex;gap:16px;align-items:stretch}
+.answer{flex:0 0 340px;background:#f6fff9;border:1px solid #b7e1c4;border-radius:16px;
+ padding:16px 18px}
+.st{font-size:14px;font-weight:700;color:#14622c;margin:0 0 10px}
+.big{font-size:13.5px;color:#6b7280;margin:0}
+.ansprice{font-size:42px;font-weight:800;letter-spacing:-1.5px;color:#14622c;margin:0;
+ font-variant-numeric:tabular-nums;line-height:1.15}
+.ansname{font-size:17px;font-weight:700;margin:0 0 10px}
+ul{margin:0;padding:0;list-style:none;border-top:1px solid #d9efe1}
+li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;
+ border-bottom:1px solid #d9efe1;font-size:14px}
+li span.p{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.right{flex:1;min-width:0}
+.row{display:flex;gap:12px;margin:0 0 10px}
+.pc{flex:1;border:1px solid;border-radius:14px;padding:12px 14px}
+.pc.on{box-shadow:0 0 0 3px rgba(29,79,145,.18)}
+.pn{font-size:14px;font-weight:700}
+.pt{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;margin:1px 0 6px}
+.pp{font-size:26px;font-weight:800;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.pi{font-size:13px;font-weight:600}
+.tl{width:100%;border-collapse:collapse;table-layout:fixed;margin:4px 0 2px}
+.tl td{border:0;padding:0;height:28px;text-align:center;font-size:12.5px;font-weight:700;
  overflow:hidden;white-space:nowrap}
-.tl td.gap{background:repeating-linear-gradient(45deg,#f0f1f4,#f0f1f4 5px,#e2e4ea 5px,#e2e4ea 10px);
- color:#8b93a3;font-weight:600;font-size:11px}
+.tl td.gap{background:repeating-linear-gradient(45deg,#f0f1f4,#f0f1f4 5px,#e2e4ea 5px,#e2e4ea 10px)}
 .tl2{width:100%;border-collapse:collapse;table-layout:fixed}
-.tl2 td{border:0;padding:0;font-size:11.5px;color:#6b7280;white-space:nowrap;overflow:hidden}
-.foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px}
-.note{font-size:13px;color:#6b7280;margin:0}
-.src{font-size:12px;color:#9aa1ad;margin:0}
+.tl2 td{border:0;padding:0;font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden}
+.foot{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;gap:16px}
+.note{font-size:12.5px;color:#6b7280;margin:0}
+.src{font-size:12px;color:#9aa1ad;margin:0;white-space:nowrap}
 </style></head><body>
 <div class="card">
   <h1>麦当劳几点最便宜 <span class="badge">✓ 真实价格 · 逐笔实测</span></h1>
-  <p class="sub">一天分四段卖，每段菜单不一样、最便宜的一口也不一样 ——
+  <p class="sub">选城市和几点去，只告诉你那一刻能点什么、最便宜的一口多少钱 ——
   5 座城市 · 全天 7000 次逐笔问价</p>
-  <div class="row"><div class="pc" style="background:#FFF2D9;color:#8A5300;border-color:#F0C987"><div class="pn">🌅 早餐</div><div class="pt">7:14–10:15</div><div class="pp">¥9.90</div><div class="pi">芝芝火腿扒堡组合</div></div><div class="pc" style="background:#FFE6D6;color:#A64400;border-color:#F2B48A"><div class="pn">🍔 午餐</div><div class="pt">10:44–14:15</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div><div class="pc" style="background:#EFE6FF;color:#5B3BA8;border-color:#C9B6F5"><div class="pn">🍰 下午茶</div><div class="pt">14:44–16:45</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div><div class="pc" style="background:#DDEAFF;color:#1D4F91;border-color:#A9C6F2"><div class="pn">🌙 夜市</div><div class="pt">17:14–21:45</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div></div>
-  <table class="tl"><tr><td class="gap" style="width:1.556%" title="07:00–07:14"></td><td style="width:20.111%;background:#FFF2D9;color:#8A5300;border:1px solid #F0C987">早餐</td><td class="gap" style="width:3.222%" title="10:15–10:44"></td><td style="width:23.444%;background:#FFE6D6;color:#A64400;border:1px solid #F2B48A">午餐</td><td class="gap" style="width:3.222%" title="14:15–14:44"></td><td style="width:13.444%;background:#EFE6FF;color:#5B3BA8;border:1px solid #C9B6F5">下午茶</td><td class="gap" style="width:3.222%" title="16:45–17:14"></td><td style="width:30.111%;background:#DDEAFF;color:#1D4F91;border:1px solid #A9C6F2">夜市</td><td class="gap" style="width:1.667%" title="21:45–22:00"></td><td style="width:0;padding:0;border:0"></td></tr></table><table class="tl2"><tr><td style="width:1.556%"></td><td style="width:20.111%">07:14</td><td style="width:3.222%"></td><td style="width:23.444%">10:44</td><td style="width:3.222%"></td><td style="width:13.444%">14:44</td><td style="width:3.222%"></td><td style="width:30.111%">17:14</td><td style="width:1.667%"></td><td style="width:0;text-align:right">22:00</td></tr></table>
+
+  <div class="qbar">
+    <span class="qlab">你在哪个城市</span>
+    <span class="chip on">上海</span>
+    <span class="chip">北京　广州　成都</span>
+    <span class="qlab">几点去</span>
+    <span class="sel">11:00</span>
+  </div>
+
+  <div class="two">
+    <div class="answer">
+      <p class="st">午餐档 10:44–14:15</p>
+      <p class="big">这一刻最便宜的一口</p>
+      <p class="ansprice">¥11.90</p>
+      <p class="ansname">蘸酱炸鸡</p>
+      <ul><li><span>蘸酱炸鸡</span><span class="p">¥11.90</span></li><li><span>麦咖啡™冰奶铁中杯</span><span class="p">¥13.90</span></li><li><span>冰浓浓黑巧中杯</span><span class="p">¥13.90</span></li><li><span>精选超值随心配</span><span class="p">¥13.90</span></li></ul>
+    </div>
+    <div class="right">
+      <div class="row"><div class="pc" style="background:#FFF2D9;color:#8A5300;border-color:#F0C987"><div class="pn">🌅 早餐</div><div class="pt">7:14–10:15</div><div class="pp">¥9.90</div><div class="pi">芝芝火腿扒堡组合</div></div><div class="pc on" style="background:#FFE6D6;color:#A64400;border-color:#F2B48A"><div class="pn">🍔 午餐</div><div class="pt">10:44–14:15</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div><div class="pc" style="background:#EFE6FF;color:#5B3BA8;border-color:#C9B6F5"><div class="pn">🍰 下午茶</div><div class="pt">14:44–16:45</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div><div class="pc" style="background:#DDEAFF;color:#1D4F91;border-color:#A9C6F2"><div class="pn">🌙 夜市</div><div class="pt">17:14–21:45</div><div class="pp">¥11.90</div><div class="pi">蘸酱炸鸡</div></div></div>
+      <table class="tl"><tr><td class="gap" style="width:1.556%"></td><td style="width:20.111%;background:#FFF2D9;color:#8A5300;border:1px solid #F0C987">早餐</td><td class="gap" style="width:3.222%"></td><td style="width:23.444%;background:#FFE6D6;color:#A64400;border:1px solid #F2B48A">午餐</td><td class="gap" style="width:3.222%"></td><td style="width:13.444%;background:#EFE6FF;color:#5B3BA8;border:1px solid #C9B6F5">下午茶</td><td class="gap" style="width:3.222%"></td><td style="width:30.111%;background:#DDEAFF;color:#1D4F91;border:1px solid #A9C6F2">夜市</td><td class="gap" style="width:1.667%"></td><td style="width:0;padding:0;border:0"></td></tr></table><table class="tl2"><tr><td style="width:1.556%"></td><td style="width:20.111%">07:14</td><td style="width:3.222%"></td><td style="width:23.444%">10:44</td><td style="width:3.222%"></td><td style="width:13.444%">14:44</td><td style="width:3.222%"></td><td style="width:30.111%">17:14</td><td style="width:1.667%"></td><td style="width:0;text-align:right">22:00</td></tr></table>
+      <p class="note">灰色斜纹 = 空档：上一档已收、下一档未开，两种都点不到。</p>
+    </div>
+  </div>
+
   <div class="foot">
-    <p class="note">灰色斜纹 = 空档：上一档已收、下一档未开，两种都点不到。
-    示例门店：上海 · 麦当劳上海闸北曲阜路大悦城餐厅</p>
+    <p class="note">示例门店：上海 · 麦当劳上海闸北曲阜路大悦城餐厅</p>
     <p class="src">价格逐笔取自麦当劳订餐系统实时问价 · 只读采集 · 非官方产品</p>
   </div>
 </div>

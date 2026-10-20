@@ -71,13 +71,22 @@
 - **不做外送** —— 外送价依赖个人收货地址, 属于用户私有配置, 本项目不采集
 - **不锁定你的位置** —— 城市 + 关键词任选门店, 谁都能对自己所在的城市跑一遍
 
-## 快速开始
+## 用起来（按门槛从低到高）
 
-### 1. 申请 MCP Token
+| 方式 | 适合谁 | 要做什么 |
+|---|---|---|
+| **打开网页** | 所有人（推荐） | 打开 https://mcd-when.app.workbuddy.host/ → 选城市 → 选几点去 → 看答案。不用注册、不用装东西 |
+| **离线版** | 没网也想查 | 下载 [dist/report.html](dist/report.html) 双击即开，功能完全一样 |
+| **问 AI** | 装了 Skill 的人 | 把 `skill/SKILL.md` 加进 AI 客户端，直接问「现在还买得到早餐吗」 |
+| **自己跑数据** | 想跑自己城市的人 | 需要 MCP Token，见下方四步 |
+
+### 自己跑数据（跑你自己城市的门店）
+
+#### 1. 申请 MCP Token
 
 到 [open.mcd.cn/mcp](https://open.mcd.cn/mcp) 手机号登录 → 控制台 → 激活, 复制 Token。
 
-### 2. 配置环境变量
+#### 2. 配置环境变量
 
 ```bash
 # Windows (cmd)
@@ -92,13 +101,13 @@ export MCD_MCP_TOKEN=你的token
 
 (也可以放进 `.env` 文件, 已被 `.gitignore` 排除, 不会入库。)
 
-### 3. 勘探工具参数(官方没有参数文档, 这一步生成地图)
+#### 3. 勘探工具参数(官方没有参数文档, 这一步生成地图)
 
 ```bash
 python src/discover.py
 ```
 
-### 4. 全天普查(今天跑明天, 不用等真实时间)
+#### 4. 全天普查(今天跑明天, 不用等真实时间)
 
 ```bash
 python src/survey.py --city 上海              # 单城市
@@ -109,17 +118,17 @@ python src/survey.py --dry-run                # 只看采样计划, 不发核价
 官方接口的 `reservationDate` 允许指定未来任意时刻, 所以 **一次运行就能把明天
 从开门到打烊的每个时刻全部核价**, 不需要挂 7 天定时任务。
 
-### 5. 渲染报告
+#### 5. 渲染报告
 
 ```bash
-python src/render_report.py    # -> dist/report.html (双击即开, 完全离线)
-python src/render_card.py      # -> dist/card.html   (README 首图源, 可用浏览器截图)
+python src/render_report.py    # -> dist/report.html (问答式, 双击即开)
+python src/render_card.py      # -> dist/card.html   (README 首图源)
 ```
 
 没有 Token 想先看看长什么样? `python src/make_demo.py` 生成演示数据
-(页面会带「演示数据 · 非真实价格」徽标, 拿到真实数据后自动摘掉)。
+(页面会带「示例价格」徽标, 拿到真实数据后自动摘掉)。
 
-### 6. 此刻决策(打开就能用的那一句)
+#### 6. 此刻决策(打开就能用的那一句)
 
 ```bash
 python src/now.py --city 上海
