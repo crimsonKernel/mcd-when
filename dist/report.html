@@ -39,12 +39,39 @@ a{color:#8C2F0B}
 /* —— 提问区 —— */
 .q{background:#fff;border:1px solid #e3e6ec;border-radius:16px;padding:16px 18px;margin:0 0 14px;
  box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
-.qrow{margin:0 0 12px}
-.qrow:last-child{margin-bottom:0}
-.qlab{font-size:14px;color:#6b7280;font-weight:700;display:block;margin:0 0 7px}
-.selrow{display:flex;gap:10px;flex-wrap:wrap}
-select.sel{font:inherit;font-size:16px;padding:9px 12px;border:1px solid #d7dbe3;
- border-radius:10px;background:#fff;color:#1f2329;flex:1;min-width:130px;max-width:220px}
+.qrow{margin:0 0 14px;padding:0 0 14px;border-bottom:1px dashed #EFE3D3}
+.qrow:last-child{margin-bottom:0;padding-bottom:0;border-bottom:0}
+.qlab{display:flex;align-items:center;gap:9px;font-size:15.5px;color:#2B1B12;
+ font-weight:800;display:flex;margin:0 0 10px}
+.qnum{flex:none;display:inline-flex;align-items:center;justify-content:center;
+ width:22px;height:22px;border-radius:50%;background:#C2410C;color:#fff;
+ font-size:13px;font-weight:800;line-height:1}
+.qhint{font-size:12.5px;color:#96806A;margin:7px 0 0}
+.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:132px;max-width:240px}
+.field .flab{font-size:12.5px;color:#8A7361;font-weight:700;letter-spacing:.3px}
+.selrow{display:flex;gap:12px;flex-wrap:wrap}
+select.sel{font:inherit;font-size:16px;padding:11px 12px;border:1px solid #E4D5BE;
+ border-radius:12px;background:#fff;color:#1f2329;width:100%;
+ appearance:none;-webkit-appearance:none;
+ background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%2396806A' stroke-width='1.8' fill='none' stroke-linecap='round'/></svg>");
+ background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+ cursor:pointer;transition:border-color .15s,box-shadow .15s}
+select.sel:hover:not(:disabled){border-color:#C2410C}
+select.sel:focus{border-color:#C2410C;box-shadow:0 0 0 3px rgba(194,65,12,.13);outline:none}
+select.sel:disabled{background:#F7F3ED;color:#A9907A;cursor:not-allowed}
+select.sel option{color:#1f2329}
+select#times{font:inherit;font-size:16px;padding:11px 32px 11px 12px;border:1px solid #E4D5BE;
+ border-radius:12px;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%2396806A' stroke-width='1.8' fill='none' stroke-linecap='round'/></svg>") no-repeat right 12px center;
+ color:#1f2329;appearance:none;-webkit-appearance:none;cursor:pointer;transition:border-color .15s}
+select#times:focus{border-color:#C2410C;box-shadow:0 0 0 3px rgba(194,65,12,.13);outline:none}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+button.now{font:inherit;font-size:14.5px;padding:10px 15px;border:1px solid #E4D5BE;
+ border-radius:11px;background:#FFF9F1;color:#7C4A22;cursor:pointer;font-weight:600;
+ transition:border-color .15s,color .15s,background .15s,transform .1s}
+button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
+button.now:active{transform:translateY(1px)}
+button.now.primary{background:#C2410C;border-color:#C2410C;color:#fff;box-shadow:0 2px 8px rgba(194,65,12,.25)}
+button.now.primary:hover{background:#A8360A;border-color:#A8360A;color:#fff}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 0}
 .chip{display:inline-block;padding:6px 13px;border:1px solid #d7dbe3;border-radius:20px;
  background:#fff;color:#1f2329;font-size:14.5px;cursor:pointer;line-height:1.5;
@@ -161,6 +188,17 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   footer{color:#6d7684;border-top-color:#2c313a}
   .cmp .track{background:#262b34}
   .cmp .bar{background:#4a5361}
+  .qrow{border-bottom-color:#3a3326}
+  .qlab{color:#F0E7DB}
+  .qhint{color:#96866F}
+  .field .flab{color:#B9A68E}
+  select.sel,select#times{background-color:#22262E;border-color:#4A412F;color:#e7eaf0}
+  select.sel:disabled{background-color:#1c1f24;color:#6d7684}
+  select.sel option{background:#22262E;color:#e7eaf0}
+  button.now{background:#2A241B;border-color:#4A412F;color:#E9D9C4}
+  button.now:hover{background:#33291C;border-color:#C2410C;color:#F0A96B}
+  button.now.primary{background:#C2410C;border-color:#C2410C;color:#fff}
+  button.now.primary:hover{background:#A8360A;border-color:#A8360A;color:#fff}
 }
 @media print{
   body{background:#fff;padding:0;font-size:12pt}
@@ -189,17 +227,32 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 
 <div class="q">
   <div class="qrow">
-    <span class="qlab">1 · 你在哪个城市</span>
+    <span class="qlab"><span class="qnum">1</span>你在哪座城市</span>
     <div class="selrow">
-      <select class="sel" id="provSel" aria-label="先选省份"></select>
-      <select class="sel" id="citySel" aria-label="再选城市"></select>
+      <div class="field">
+        <label class="flab" for="provSel">省份 / 直辖市</label>
+        <select class="sel" id="provSel"></select>
+      </div>
+      <div class="field">
+        <label class="flab" for="citySel">城市</label>
+        <select class="sel" id="citySel"></select>
+      </div>
     </div>
     <div id="suggest"></div>
+    <p class="qhint" id="cityHint"></p>
   </div>
   <div class="qrow">
-    <span class="qlab">2 · 你几点去</span>
-    <select id="times"></select>
-    <button class="now" id="nowbtn" type="button">就用现在这个时间</button>
+    <span class="qlab"><span class="qnum">2</span>你几点去</span>
+    <div class="selrow">
+      <div class="field">
+        <label class="flab" for="times">到店时间</label>
+        <select id="times"></select>
+      </div>
+    </div>
+    <div class="acts">
+      <button class="now primary" id="bestbtn" type="button">直接告诉我今天最便宜的时刻</button>
+      <button class="now" id="nowbtn" type="button">就用现在这个时间</button>
+    </div>
   </div>
 </div>
 
@@ -235,7 +288,7 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 <script>
 (function () {
   var DATA = window.__MCD_DATA__;
-  var cur = DATA.cities[0], curTime = null;
+  var cur = DATA.cities[0], curTime = null, bestName = null;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -269,6 +322,14 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
     }
     return out;
   }
+  function cityHint() {
+    var el = document.getElementById("cityHint");
+    if (!el) return;
+    var p = document.getElementById("provSel").value;
+    var n = citiesOf(p).length;
+    el.textContent = p + " 共 " + n + " 座城市已采集 · 没找到你的城市？往下翻到最后一段「城市名单」。";
+  }
+
   function fillProv() {
     var sel = document.getElementById("provSel"), ps = provList();
     sel.innerHTML = "";
@@ -282,11 +343,20 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
     var p = document.getElementById("provSel").value;
     var sel = document.getElementById("citySel"), cs = citiesOf(p);
     sel.innerHTML = "";
+    if (!p) {
+      var ph = document.createElement("option");
+      ph.value = ""; ph.textContent = "请先选省份"; ph.selected = true;
+      sel.appendChild(ph); sel.disabled = true;
+      cityHint();
+      return;
+    }
+    sel.disabled = false;
     for (var i = 0; i < cs.length; i++) {
       var o = document.createElement("option");
       o.value = cs[i]; o.textContent = cs[i];
       sel.appendChild(o);
     }
+    cityHint();
   }
   function syncSels() {
     var ps = provList(), p = provOf(cur);
@@ -296,11 +366,29 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
     document.getElementById("citySel").value = cur.city;
   }
 
+  /* ---- 今天最便宜的那一档(一键直接给答案) ---- */
+  function cheapestPeriod(city) {
+    var best = null;
+    for (var i = 0; i < city.periods.length; i++) {
+      var p = city.periods[i];
+      if (!p.meal) continue;
+      if (!best || p.meal.p < best.meal.p) best = p;
+    }
+    return best;
+  }
+  function clampSlot(city, t) {
+    // 取 ≥ 目标时刻的第一个可选时刻(开档前 30 分钟落进去会变成"点不了")
+    var slots = slotList(city);
+    for (var i = 0; i < slots.length; i++) if (toMin(slots[i]) >= toMin(t)) return slots[i];
+    return slots[slots.length - 1];
+  }
+
   /* ---- 选城市(下拉与下方城市名单共用) ---- */
   function pick(name) {
     var c = findCity(name);
     if (!c) return;
     cur = c;
+    bestName = null;
     syncSels();
     hotChips(); fillTimes(); render();
   }
@@ -406,8 +494,14 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
       return;
     }
 
-    out.push('<p class="state ok">' + pdot(p.name) + "这个点属于 <b>" + esc(p.name)
-      + "档</b>（" + p.start + "–" + p.end + "）</p>");
+    var isBest = bestName && bestName === p.name;
+    if (isBest) {
+      out.push('<p class="state ok">' + pdot(p.name) + "这是<b>" + esc(city.city)
+        + "今天最便宜的一档</b>：" + esc(p.name) + " " + p.start + "–" + p.end + "</p>");
+    } else {
+      out.push('<p class="state ok">' + pdot(p.name) + "这个点属于 <b>" + esc(p.name)
+        + "档</b>（" + p.start + "–" + p.end + "）</p>");
+    }
 
     var meal = p.meal || p.any;
     if (meal) {
@@ -516,13 +610,25 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
     hotChips();
     fillTimes();
     document.getElementById("provSel").onchange = function () {
+      bestName = null;
       fillCitySel();
       pick(document.getElementById("citySel").value);
     };
-    document.getElementById("citySel").onchange = function () { pick(this.value); };
-    document.getElementById("times").onchange = function () { curTime = this.value; render(); };
+    document.getElementById("citySel").onchange = function () { bestName = null; pick(this.value); };
+    document.getElementById("times").onchange = function () {
+      bestName = null; curTime = this.value; render();
+    };
     document.getElementById("nowbtn").onclick = function () {
-      curTime = nowTime(); fillTimes(); render();
+      bestName = null; curTime = nowTime(); fillTimes(); render();
+    };
+    document.getElementById("bestbtn").onclick = function () {
+      var b = cheapestPeriod(cur);
+      if (!b) return;
+      bestName = b.name;
+      curTime = clampSlot(cur, b.start);
+      fillTimes(); render();
+      var box = document.getElementById("ans");
+      if (box && box.scrollIntoView) box.scrollIntoView({ behavior: "smooth", block: "start" });
     };
     render();
   }
