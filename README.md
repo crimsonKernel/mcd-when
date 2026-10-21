@@ -244,7 +244,7 @@ python src/now.py --city 上海
 ## 技术说明
 
 - 零第三方依赖, 纯 Python 标准库, Python 3.10+ 直接跑
-- MCP 接入细节、工具调用链与业务价值: [docs/MCP\_INTEGRATION.md](docs/MCP_INTEGRATION.md)
+- MCP 接入细节、工具调用链与业务价值: [MCP_INTEGRATION.md](MCP_INTEGRATION.md)
 - 限流安全: 内置 600 次/分钟节流与 429 退避
 - 合规: 本项目为 2026 麦当劳程序员创意开发大赛参赛作品, 非麦当劳官方产品;
     
