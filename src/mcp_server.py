@@ -35,6 +35,9 @@ DATA_DIR = ROOT / "data"
 NATIONAL_PATH = DATA_DIR / "surface_national.json"
 BATCH_PATH = DATA_DIR / "surface_batch.json"
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from combo import best_combo, candidates, menu_of  # noqa: E402
+
 SERVER_NAME = "mcd-when"
 SERVER_VERSION = "1.0.0"
 PROTOCOL_VERSION = "2024-11-05"
@@ -180,19 +183,7 @@ def tool_city_ranking(ds: dict, args: dict) -> dict:
 
 def _menu_of(c: dict) -> dict[str, dict[str, Any]]:
     """商品码 -> {name, category, kind, periods, prices:{时段: 分}}"""
-    out: dict[str, dict[str, Any]] = {}
-    for it in c.get("basket") or []:
-        code = it.get("code")
-        if not code:
-            continue
-        tab = ((c.get("prices") or {}).get("pickup") or {}).get(code) or {}
-        prices = {p: v for p, v in tab.items() if isinstance(v, int)}
-        out[code] = {"name": it.get("name") or code,
-                     "category": it.get("category", ""),
-                     "kind": it.get("kind", ""),
-                     "periods": it.get("periods") or [],
-                     "prices": prices}
-    return out
+    return menu_of(c)
 
 
 def tool_city_menu(ds: dict, args: dict) -> dict:
@@ -248,47 +239,36 @@ def tool_combo_under_budget(ds: dict, args: dict) -> dict:
     if c is None:
         raise ValueError(f"没有「{city}」的数据")
 
-    cands = []
-    for code, m in _menu_of(c).items():
-        if m["kind"] not in ("meal", "side"):
-            continue                       # 配件/调味品不算一顿饭
-        if period and period not in (m["periods"] or [period]):
-            continue
-        if not m["prices"]:
-            continue
-        p = m["prices"].get(period) if period else min(m["prices"].values())
-        # ¥5 以下的一律不当饭(实测有 ¥2 的联名饼干、¥3 的蘸酱包会污染搭配)
-        if p is None or p < 500 or p > limit:
-            continue
-        cands.append({"code": code, "name": m["name"], "kind": m["kind"],
-                      "price_fen": p})
+    cands = [x for x in candidates(c, period) if x["price_fen"] <= limit]
     if not cands:
         return {"city": city, "budget": _yuan(limit), "combo": [],
                 "note": "该条件下没有可预算内可售商品"}
 
-    # 0/1 背包。目标不是单纯件数最多 —— 四个甜筒凑 ¥20 谁也不叫"一顿午饭"。
-    # 所以排序键是 (有没有主食, 件数, -花费): 先保证有一口能当饭的, 再尽量多件。
-    cands.sort(key=lambda x: x["price_fen"])
-    n = len(cands)
-    NEG = (-1, -1)
-    dp = [NEG] * (limit + 1)
-    pick: list[list[int]] = [[] for _ in range(limit + 1)]
-    dp[0] = (0, 0)
-    for i, it in enumerate(cands):
-        w = it["price_fen"]
-        is_meal = 1 if it["kind"] == "meal" else 0
-        for k in range(limit, w - 1, -1):
-            if dp[k - w][0] < 0:
-                continue
-            cand = (dp[k - w][0] or is_meal, dp[k - w][1] + 1)
-            if cand > dp[k]:
-                dp[k] = cand
-                pick[k] = pick[k - w] + [i]
-    best_k = max(range(limit + 1),
-                 key=lambda k: (dp[k][0], dp[k][1], -k) if dp[k][0] >= 0 else (-1, -1, 0))
-    combo = [{"name": cands[i]["name"], "kind": cands[i]["kind"],
-              "price_fen": cands[i]["price_fen"],
-              "price": _yuan(cands[i]["price_fen"])} for i in pick[best_k]]
+    # 0/1 背包。「有主食」是硬约束: 预算装不下主食时返回空,
+    # 由调用方说「预算不够吃一顿正经饭」, 而不是拿两个冰淇淋冒充一顿午饭。
+    best_k, picked, has_meal = best_combo(cands, limit)
+    if not has_meal:
+        # 注意从「未按预算过滤」的候选里找最便宜主食, 否则提示不了还差多少钱
+        all_cands = candidates(c, period)
+        meals = [x for x in all_cands if x["kind"] == "meal"]
+        cheapest = min(meals, key=lambda x: x["price_fen"]) if meals else None
+        return {
+            "city": city, "period": period or "不限时段", "budget": _yuan(limit),
+            "combo": [], "total_fen": 0, "total": _yuan(0),
+            "insufficient": True,
+            "cheapest_single": ({"name": cheapest["name"],
+                                 "price": _yuan(cheapest["price_fen"])}
+                                if cheapest else None),
+            "note": (f"{_yuan(limit)} 在这个时段吃不到一顿正经饭"
+                     + (f", 最便宜的一餐是 {cheapest['name']} "
+                        f"{_yuan(cheapest['price_fen'])}"
+                        f"(还差 {_yuan(cheapest['price_fen'] - limit)})"
+                        if cheapest else "")),
+            "menu_source": ds["meta"]["menuSource"],
+        }
+    combo = [{"name": x["name"], "kind": x["kind"],
+              "price_fen": x["price_fen"],
+              "price": _yuan(x["price_fen"])} for x in picked]
     # 也给出"最便宜的一顿"作为对照
     meals = [x for x in cands if x["kind"] == "meal"]
     cheapest = min(meals, key=lambda x: x["price_fen"]) if meals else min(

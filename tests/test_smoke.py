@@ -211,3 +211,108 @@ class TestMcpServer(unittest.TestCase):
         finally:
             self.mod._send = orig
         self.assertEqual(sent[0]["result"]["serverInfo"]["name"], "mcd-when")
+
+
+class TestCombo(unittest.TestCase):
+    """「预算内怎么点最饱」的核心算法。"""
+
+    def setUp(self):
+        from combo import best_combo
+        self.best_combo = best_combo
+
+    ITEMS = [
+        {"name": "巨无霸", "kind": "meal", "price_fen": 1390},
+        {"name": "圆筒", "kind": "side", "price_fen": 500},
+        {"name": "薯条", "kind": "side", "price_fen": 850},
+        {"name": "酱包", "kind": "extra", "price_fen": 300},
+    ]
+
+    def test_requires_a_meal(self):
+        # ¥10 只够买两个圆筒, 但圆筒不是主食 —— 必须判"吃不到一顿正经饭"
+        total, picked, ok = self.best_combo(self.ITEMS, 1000)
+        self.assertFalse(ok)
+        self.assertEqual(picked, [])
+
+    def test_meal_plus_sides(self):
+        total, picked, ok = self.best_combo(self.ITEMS, 2000)
+        self.assertTrue(ok)
+        self.assertEqual(total, 1390 + 500)          # 主食 + 最便宜的小食
+        self.assertEqual(len(picked), 2)
+
+    def test_maximizes_item_count(self):
+        # ¥30: 主食 1390 + 圆筒 500 + 薯条 850 = 2740, 3 件
+        total, picked, ok = self.best_combo(self.ITEMS, 3000)
+        self.assertTrue(ok)
+        self.assertEqual(len(picked), 3)
+        self.assertEqual(total, 2740)
+        self.assertLessEqual(total, 3000)
+
+    def test_never_exceeds_budget(self):
+        for b in range(500, 4000, 137):
+            total, _, ok = self.best_combo(self.ITEMS, b)
+            if ok:
+                self.assertLessEqual(total, b)
+
+    def test_empty_input(self):
+        self.assertEqual(self.best_combo([], 2000), (0, [], False))
+
+    def test_candidates_filters_cheap_and_extra(self):
+        import combo
+        cands = combo.candidates(
+            {"basket": [
+                {"code": "a", "name": "堡", "kind": "meal",
+                 "periods": ["午餐"], "category": "汉堡"},
+                {"code": "b", "name": "饼干", "kind": "side",
+                 "periods": ["午餐"], "category": "小食"},
+                {"code": "c", "name": "酱", "kind": "extra",
+                 "periods": ["午餐"], "category": "调味"},
+            ],
+             "prices": {"pickup": {"a": {"午餐": 1390}, "b": {"午餐": 200},
+                                   "c": {"午餐": 300}}}},
+            "午餐")
+        self.assertEqual([c["name"] for c in cands], ["堡"])
+
+
+class TestComboBlob(unittest.TestCase):
+    """data/combos.json 的结构完整性(前端直接消费这份数据)。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.blob = load("data/combos.json")
+
+    def test_shape(self):
+        self.assertIn("names", self.blob)
+        self.assertIn("budgets", self.blob)
+        self.assertIn("cities", self.blob)
+        self.assertEqual(self.blob["budgets"],
+                         [1000, 1500, 2000, 2500, 3000, 4000, 5000])
+
+    def test_every_city_has_periods(self):
+        self.assertGreater(len(self.blob["cities"]), 300)
+        for city, per in self.blob["cities"].items():
+            self.assertTrue(per, f"{city} 没有任何时段")
+            for pname, e in per.items():
+                self.assertIn("best", e)
+                self.assertIn("b", e)
+
+    def test_name_indices_all_valid(self):
+        n = len(self.blob["names"])
+        for city, per in self.blob["cities"].items():
+            for pname, e in per.items():
+                self.assertLess(e["best"][0], n, f"{city}/{pname} best 越界")
+                for _b, lad in e["b"].items():
+                    for pair in lad["i"]:
+                        self.assertLess(pair[0], n, f"{city}/{pname} 名称下标越界")
+
+    def test_no_combo_exceeds_its_budget(self):
+        for city, per in self.blob["cities"].items():
+            for pname, e in per.items():
+                for b, lad in e["b"].items():
+                    self.assertLessEqual(lad["t"], int(b),
+                                         f"{city}/{pname}/¥{b} 超预算")
+
+    def test_every_combo_has_at_least_one_item(self):
+        for city, per in self.blob["cities"].items():
+            for pname, e in per.items():
+                for b, lad in e["b"].items():
+                    self.assertTrue(lad["i"], f"{city}/{pname}/¥{b} 空搭配")

@@ -51,6 +51,9 @@
 3. **开门 ≠ 开吃**：店 7:00 开门，早餐 7:14 才能点；而且不是全国一个时间，
      
    东北 05:14 就能买，重庆要等到 08:14，乌鲁木齐干脆没有早餐档。
+4. **兜里多少钱，就给你凑多少东西**：选好城市和时段，页面上直接问「我有 ¥20 能吃到什么」——
+   
+   全国 388 城、9454 组搭配都是提前算好的，打开就有答案，零 Token、不用装任何东西。
 
 </details>
 
@@ -106,12 +109,18 @@
 
 ## 它在回答什么问题
 
-别的项目回答「**买什么**最便宜」。这个项目回答「**什么时候**」:
+别的项目回答「**买什么**最便宜」。这个项目回答「**什么时候**」，以及顺着时间线往下问的那一串：
 
 - 几点之前, 早餐还买得到?
 - 我下午 3 点到店, 能点的最便宜一套是什么?
+- **我有 ¥20，这一档能吃到最饱的是什么？** ← 页面上直接算，不用问 AI
 - 得来速和到店自提, 同一时刻同一商品价差多少?
 - 麦当劳官方的时段划分, 和真实菜单边界对得上吗?
+
+「¥20 能吃到什么」这类问题，答案是 0/1 背包在本地菜单数据上跑出来的：
+先保证有一口能当饭的（有主食是硬门槛，不是优先级），再尽量多件。
+所以 ¥10 的午餐档会告诉你「吃不到一顿正经饭，最便宜的一餐 ¥13.90，还差 ¥3.90」，
+而不是扔给你两个冰淇淋凑数。
 
 ## 它不做什么
 
@@ -122,26 +131,26 @@
 
 ## 部署到你自己的 GitHub（GitHub Pages）
 
-报告是**单一静态 HTML**，这也是 GitHub Pages 最省事的一类项目：
+报告是**单一静态 HTML**，仓库里已经带好了 Pages 工作流（`.github/workflows/pages.yml`），
+推送即上线，不用手工传文件：
 
 ```bash
 git clone <你的仓库地址> mcd-when && cd mcd-when
-python src/render_report.py        # 可选: 重新渲染 dist/report.html
-cp dist/report.html index.html     # 根目录的 index.html 就是 Pages 入口
-git add index.html && git commit -m "docs: deploy report to Pages" && git push
+# 仓库 Settings → Pages → Source 选「GitHub Actions」，保存一次即可
+# 之后每次 push 到 main 都会自动重新部署
 ```
 
-然后在仓库 **Settings → Pages** 里 Source 选 `main` / 根目录，保存后约一 minute 生效，
-  
-地址形如：`https://<你的用户名>.github.io/mcd-when/`。
+地址形如：`https://<你的用户名>.github.io/mcd-when/`，根路径就是问答页。
 
-> 单文件自包含，没有构建步骤、没有依赖、不需要 CI。
+> 单文件自包含，没有构建步骤、没有依赖、不需要装东西。
+> 想完全手动也行：`python src/render_report.py` 重新渲染后，
+> `cp dist/report.html index.html` 再推一次。
 
 ## 用起来（按门槛从低到高）
 
 | 方式        | 适合谁         | 要做什么                                                                    |
 | --------- | ----------- | ----------------------------------------------------------------------- |
-| **打开网页**  | 所有人（推荐）     | 打开 <https://mcd-when.app.workbuddy.host/> → 选城市 → 选几点去 → 看答案。不用注册、不用装东西 |
+| **打开网页**  | 所有人（推荐）     | 打开 <https://mcd-when.app.workbuddy.host/> → 选城市 → 选几点去 → 看答案，还能直接问「¥20 能吃到什么」。不用注册、不用装东西 |
 | **离线版**   | 没网也想查       | 下载 [dist/report.html](dist/report.html) 双击即开，功能完全一样                     |
 | **问 AI**  | 装了 Skill 的人 | 把 `skill/SKILL.md` 加进 AI 客户端，直接问「现在还买得到早餐吗」                             |
 | **自己跑数据** | 想跑自己城市的人    | 需要 MCP Token，见下方四步                                                      |
@@ -253,8 +262,9 @@ python src/now.py --city 上海
 ## 自检
 
 ```bash
-python -m unittest discover tests          # 9 项冒烟测试(数据/分类/产物, 零依赖)
-python src/check_layout.py dist/report.html # 四视口零溢出体检
+python -m unittest discover tests           # 33 项冒烟测试(数据/分类/算法/产物, 零依赖)
+python src/check_layout.py                  # 四视口零溢出体检
+python src/check_combo.py                   # 预算搭配器实测(无头浏览器, 覆盖预算不足路径)
 ```
 
 ## 参与方式
@@ -286,8 +296,9 @@ mcd-when/
 │   ├── PROMO.md               四平台宣发文案
 │   ├── CONTEST_DECLARATION.md 参赛声明(官方原文, 未改动)
 │   └── ADVANCED.md            进阶: 批量核价与按需单城查询
-├── tests/test_smoke.py        零依赖冒烟测试(9 项)
+├── tests/test_smoke.py        零依赖冒烟测试(33 项)
 ├── mcp-config.example.json    MCP 配置示例(环境变量占位符)
+├── mcp-when-config.example.json  mcd-when + 官方 MCP 双 Server 配置
 ├── config.example.json        普查配置示例(城市/渠道)
 ├── skill/SKILL.md             Skill 封装(AI 客户端可装载)
 ├── workbuddy.md               WorkBuddy 专项奖励说明
@@ -305,8 +316,12 @@ mcd-when/
 │   ├── render_report.py       渲染问答式报告 HTML(全国版)
 │   ├── render_card.py         渲染 README 首图(dist/card.html)
 │   ├── check_layout.py        排版零溢出体检(四视口自动检测)
+│   ├── check_combo.py         预算搭配器实测(无头浏览器点chip/填金额/预算不足)
+│   ├── combo.py               「预算内怎么点最饱」核心算法(MCP 与页面共用)
+│   ├── combo_precompute.py    全国预算搭配预计算(输出 data/combos.json)
+│   ├── mcp_server.py          本地 MCP Server(5 个工具, 零 Token)
 │   └── make_demo.py           演示数据生成(仅预览 UI)
-├── data/                      工具 schema / 城市探测 / 全国价格表
+├── data/                      combos.json(预算搭配表) / 价格表 / 城市探测
 ├── images/                    README 首图 + 实拍截图
 └── dist/                      report.html(交互报告) / card.html(首图源)
 ```

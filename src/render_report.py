@@ -163,6 +163,63 @@ ul.can li span.n{flex:1;min-width:0}
 ul.can li span.p{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .more{font-size:13px;color:#6b7280;margin:10px 0 0}
 
+/* —— 预算搭配器: 「¥__ 能吃到最饱的」 —— */
+.budget{margin:18px 0 0;padding:14px;border:1px solid #F2D9B6;border-radius:14px;
+ background:linear-gradient(135deg,#FFFDF8 0%,#FFF9EF 100%)}
+.budget .bq{font-size:14.5px;color:#8a6100;font-weight:700;margin:0 0 10px}
+.bchips{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 10px}
+.bchip{font:inherit;font-size:14px;font-weight:700;padding:7px 14px;border-radius:999px;
+ border:1px solid #E8C89A;background:#fff;color:#8a6100;cursor:pointer;
+ transition:all .15s ease;font-variant-numeric:tabular-nums}
+.bchip:hover{border-color:#C2410C;color:#C2410C}
+.bchip.on{background:#C2410C;border-color:#C2410C;color:#fff}
+.brow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.brow .blab{font-size:13px;color:#9C8873}
+.bin{font:inherit;font-size:14px;width:82px;padding:7px 10px;border-radius:9px;
+ border:1px solid #E8C89A;background:#fff;color:#1f2329;font-variant-numeric:tabular-nums}
+.bin:focus{outline:none;border-color:#C2410C;box-shadow:0 0 0 3px rgba(194,65,12,.12)}
+.bgo{font:inherit;font-size:14px;font-weight:700;padding:7px 15px;border-radius:9px;
+ border:1px solid #C2410C;background:#C2410C;color:#fff;cursor:pointer;transition:all .15s ease}
+.bgo:hover{background:#A8360A;border-color:#A8360A}
+.bout{margin:12px 0 0;min-height:20px}
+.bout .bhead{font-size:16px;font-weight:800;margin:0 0 8px;color:#1f2329}
+.bout .bhead b{color:#B4531A;font-variant-numeric:tabular-nums}
+.bout .btot{font-size:13.5px;color:#6b7280;margin:8px 0 0}
+.bout .btot b{color:#14622c;font-variant-numeric:tabular-nums}
+.bout .bgap{font-size:13.5px;color:#8a6100;margin:8px 0 0;padding:9px 11px;
+ background:#FFF4CE;border:1px solid #F0D999;border-radius:9px}
+.bout .bnote{font-size:12.5px;color:#9C8873;margin:8px 0 0}
+ul.bcombo{margin:0;padding:0;list-style:none;border-top:1px solid #F0E2CC}
+ul.bcombo li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+ padding:9px 2px;border-bottom:1px solid #F0E2CC;font-size:15px}
+ul.bcombo li .n{flex:1;min-width:0}
+ul.bcombo li .k{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:999px;
+ flex:none;margin-right:2px}
+ul.bcombo li .k.m{background:#FDECEC;color:#B4322E}
+ul.bcombo li .k.s{background:#EAF1FE;color:#3B6BC4}
+ul.bcombo li .p{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (prefers-color-scheme:dark){
+  .budget{background:#241F16;border-color:#4A412F}
+  .budget .bq{color:#E9C46A}
+  .bchip{background:#22262E;border-color:#4A412F;color:#E9D9C4}
+  .bchip:hover{border-color:#C2410C;color:#F0A96B}
+  .bchip.on{background:#C2410C;border-color:#C2410C;color:#fff}
+  .brow .blab{color:#9A8672}
+  .bin{background:#22262E;border-color:#4A412F;color:#e7eaf0}
+  .bout .bhead{color:#e7eaf0}
+  .bout .btot{color:#9aa3b2}
+  .bout .bgap{background:#2A241B;border-color:#4A412F;color:#E9C46A}
+  .bout .bnote{color:#9A8672}
+  ul.bcombo{border-top-color:#3A332A}
+  ul.bcombo li{border-bottom-color:#3A332A}
+  ul.bcombo li .k.m{background:#3A2422;color:#F0A6A2}
+  ul.bcombo li .k.s{background:#1F2A3A;color:#9DBBF0}
+}
+@media (max-width:520px){
+  .budget{padding:12px}
+  .bin{width:74px}
+}
+
 /* —— 表格 —— */
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0 0;max-width:100%}
 table.d{border-collapse:collapse;width:100%;table-layout:fixed;font-size:14px}
@@ -501,6 +558,11 @@ JS = """
       out.push("</div>");
     }
 
+    // 预算搭配器 —— 竞争对手的杀手锏是「怎么点最省」, 我们用 388 城真实数据回答
+    if (CB[cur.city]) {
+      out.push(budgetBox(cur.city, p.name));
+    }
+
     if (p.top && p.top.length) {
       out.push('<p class="big" style="margin-top:16px">这一档便宜的几样（从便宜到贵）</p>');
       out.push('<ul class="can">');
@@ -530,12 +592,122 @@ JS = """
       + "<code>?" + "city=" + encodeURIComponent(city.city) + "&amp;t=" + esc(t) + "</code></p>");
     out.push("</div>");
     document.getElementById("ans").innerHTML = out.join("");
+    if (CB[cur.city]) bindBudget(cur.city, p.name);
     syncUrl();
   }
 
   var PC = {"早餐": "#E8A33D", "午餐": "#D9534F", "下午茶": "#5B8DEF", "夜市": "#6A5ACD"};
   function pcol(nm) { return PC[nm] || "#8b93a3"; }
   function pdot(nm) { return '<span class="pdot" style="background:' + pcol(nm) + '"></span>'; }
+
+  /* ---- 预算搭配器: 「¥__ 能吃到最饱的」 ----
+     数据来自 src/combo_precompute.py 的服务端预计算(全局商品名表压缩)。
+     用户填任意金额, 向下取到最近的一档预算; 取不到档位就说「吃不到一顿正经饭」。 */
+  var CB = (DATA.combos && DATA.combos.cities) || {};
+  var CN = (DATA.combos && DATA.combos.names) || [];
+  var CBUD = (DATA.combos && DATA.combos.budgets) || [];
+
+  function comboLookup(cityName, period, budgetFen) {
+    var e = CB[cityName];
+    if (!e) return null;
+    var pe = e[period];
+    if (!pe) return null;
+    // 向下取到最近的一档
+    var use = null;
+    for (var i = 0; i < CBUD.length; i++) {
+      var b = CBUD[i];
+      if (b <= budgetFen && pe.b && pe.b[String(b)]) use = b;
+    }
+    if (use == null) return { gap: true, cheapest: pe.best };
+    return { budget: use, combo: pe.b[String(use)], cheapest: pe.best,
+             exact: use === budgetFen };
+  }
+
+  function comboHTML(cityName, period, budgetFen) {
+    var r = comboLookup(cityName, period, budgetFen);
+    if (!r) {
+      return '<p class="bnote">这座城市没有可搭配的菜单数据。</p>';
+    }
+    if (r.gap) {
+      var ch = r.cheapest;
+      if (!ch) return '<p class="bnote">这一档没有可搭配的商品。</p>';
+      return '<p class="bgap">¥' + (budgetFen / 100).toFixed(2) + ' 在' + esc(period)
+        + '档吃不到一顿正经饭 —— 最便宜的一餐是 ' + esc(CN[ch[0]]) + ' '
+        + yuan(ch[1]) + '，还差 ' + yuan(ch[1] - budgetFen) + '。</p>';
+    }
+    var items = r.combo.i, s = "";
+    s += '<p class="bhead">¥' + (r.budget / 100).toFixed(0) + ' 能吃到 <b>'
+      + items.length + ' 件</b>，合计 ' + yuan(r.combo.t) + '</p>';
+    s += '<ul class="bcombo">';
+    for (var i = 0; i < items.length; i++) {
+      var nm = CN[items[i][0]], pf = items[i][1];
+      var isMeal = /堡|卷|饭|面|粥|组合|套餐|件套|随心配|分享餐|多人餐|双人餐|亲子餐|麦满分/
+        .test(nm);
+      s += '<li><span class="n"><span class="k ' + (isMeal ? "m" : "s") + '">'
+        + (isMeal ? "主食" : "小食") + '</span>' + esc(nm) + '</span>'
+        + '<span class="p">' + yuan(pf) + "</span></li>";
+    }
+    s += "</ul>";
+    var left = r.budget - r.combo.t;
+    s += '<p class="btot">一共 <b>' + yuan(r.combo.t) + '</b>，还剩 '
+      + yuan(left) + (left > 0 ? "（再添点别的也行）" : "（刚好花完）") + "。</p>";
+    if (r.cheapest) {
+      s += '<p class="btot">单买最便宜的一餐只要 ' + esc(CN[r.cheapest[0]]) + " "
+        + yuan(r.cheapest[1]) + "；多 " + yuan(r.combo.t - r.cheapest[1])
+        + " 就能多吃 " + (items.length - 1) + " 件。</p>";
+    }
+    if (!r.exact) {
+      s += '<p class="bnote">你填的 ¥' + (budgetFen / 100).toFixed(2)
+        + " 不在预算档上，按就近的低档 ¥" + (r.budget / 100).toFixed(0)
+        + " 算；填高一点能看到更多件。</p>";
+    }
+    return s;
+  }
+
+  var budgetCity = null, budgetPeriod = null;
+  function budgetBox(cityName, period) {
+    var chips = "";
+    for (var i = 0; i < CBUD.length; i++) {
+      chips += '<button type="button" class="bchip" data-b="' + CBUD[i] + '">¥'
+        + (CBUD[i] / 100) + "</button>";
+    }
+    return '<div class="budget" id="budgetBox">'
+      + '<p class="bq">换个问法：我有 ¥__，这一档能吃到最饱的是什么？</p>'
+      + '<div class="bchips" id="bchips">' + chips + "</div>"
+      + '<div class="brow"><span class="blab">或自己填</span>'
+      + '<input class="bin" id="bin" type="number" min="5" max="200" step="1"'
+      + ' inputmode="numeric" placeholder="20" aria-label="预算, 单位元">'
+      + '<button type="button" class="bgo" id="bgo">看看</button></div>'
+      + '<div class="bout" id="bout"></div></div>';
+  }
+  function bindBudget(cityName, period) {
+    var box = document.getElementById("budgetBox");
+    if (!box) return;
+    var chips = box.querySelectorAll(".bchip"), inp = document.getElementById("bin"),
+      out = document.getElementById("bout"), last = null;
+    function show(fen) {
+      last = fen;
+      out.innerHTML = comboHTML(cityName, period, fen);
+      inp.value = (fen / 100).toFixed(0);      //  chips 与输入框保持同步
+      for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.toggle("on", +chips[i].getAttribute("data-b") === fen);
+      }
+    }
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].onclick = (function (b) { return function () { show(b); }; })(
+        +chips[i].getAttribute("data-b"));
+    }
+    function go() {
+      var v = parseFloat(inp.value);
+      if (!v || v <= 0) { out.innerHTML = '<p class="bnote">先填个金额。</p>'; return; }
+      show(Math.round(v * 100));
+    }
+    document.getElementById("bgo").onclick = go;
+    inp.onkeydown = function (e) { if (e.key === "Enter") go(); };
+    // 默认展示中间档, 一进来就有答案
+    var mid = CBUD[Math.min(2, CBUD.length - 1)];
+    if (mid) show(mid);
+  }
 
   /* ---- 把当前城市与时刻写进地址栏, 方便复制分享 ---- */
   function syncUrl() {
@@ -783,10 +955,22 @@ def main() -> int:
         return 1
 
     data = [build_city(c) for c in cities_raw]
+
+    # 「预算内怎么点最饱」的全国搭配表 —— 服务端预算阶梯预计算,
+    # 用全局商品名表压缩到 ~0.5MB。全量菜单有 5.6MB, 塞进页面不现实。
+    combos = {}
+    combo_path = ROOT / "data" / "combos.json"
+    if combo_path.exists():
+        cb = json.loads(combo_path.read_text(encoding="utf-8"))
+        combos = {"names": cb.get("names") or [],
+                  "budgets": cb.get("budgets") or [],
+                  "cities": cb.get("cities") or {}}
+
     payload = json.dumps({
         "cities": data,
         "hot": [c for c in HOT_CITIES if any(x["city"] == c for x in data)],
         "targetDate": surface.get("targetDate", ""),
+        "combos": combos,
     }, ensure_ascii=False, separators=(",", ":"))
 
     n_cities = len(cities_raw)

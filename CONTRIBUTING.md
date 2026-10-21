@@ -32,7 +32,11 @@ python src/render_report.py                # 重新渲染 dist/report.html
 - **不入库**：Token 只走环境变量，`.env` 已被 `.gitignore` 排除
 - **排版不能错乱**：改完 HTML 请跑一遍体检，四视口都不许有横向滚动
   ```bash
-  python src/check_layout.py dist/report.html
+  python src/check_layout.py
+  ```
+- **交互不能是坏的**：改了答案卡/预算搭配器，请跑无头浏览器实测
+  ```bash
+  python src/check_combo.py
   ```
 - **改动流传跑测试**
   ```bash
@@ -42,5 +46,6 @@ python src/render_report.py                # 重新渲染 dist/report.html
 ## 提交 PR 前
 
 1. `python -m unittest discover tests` 通过
-2. `python src/check_layout.py dist/report.html` 四个视口全绿
-3. 如果改了数据口径，请在 issue 里说明影响范围（哪些城市/哪些结论会变）
+2. `python src/check_layout.py` 四个视口全绿
+3. 改了答案卡或预算搭配器的话，`python src/check_combo.py` 也要过
+4. 如果改了数据口径，请在 issue 里说明影响范围（哪些城市/哪些结论会变）
