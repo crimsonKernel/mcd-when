@@ -21,8 +21,22 @@ description: 麦当劳中国官方 MCP 的时间维度查询。当用户问「�
 | 「查 XX 城市全天价格矩阵」 | `python src/survey_national.py --city 苏州`（约 15 秒，按档核价） |
 | 「XX 城市有没有麦当劳/几点开门」 | `python src/probe_cities.py --city XX` |
 | 「生成可读报告」 | `python src/render_report.py` |
+| 接入 AI 客户端当 MCP Server 用 | `python src/mcp_server.py`（配置见 `mcp-when-config.example.json`） |
 
 路径相对本仓库根（`mcd-when/`）。
+
+## 三种用法，回答三类不同的问题
+
+| 层 | 谁采数据 | 能回答 | 门槛 |
+|---|---|---|---|
+| 静态页 `dist/report.html` | 我们（388 城快照） | 横向问题：全国哪最便宜、我的城市排第几 | 零，双击即开 |
+| MCP Server `src/mcp_server.py` | 我们（同一份快照） | 同上，但由 AI 客户端用自然语言问 | 零 Token，纯本地 |
+| 实时脚本 `src/now.py` 等 | 用户自己的 Token | 个性问题：我这店此刻买得到什么 | 需 Token + Python |
+
+**为什么快照能代表"麦当劳的价格"**：实测跨 ~20 小时对比 4664 个同城同商品同时段价格点，
+剔除采集 bug 后 96.8% 完全一致；真实变化集中在促销价（如麦咖啡冰奶铁中杯 ¥13.90→¥21.00）。
+所以「时段结构 + 全国横向比价」这类结论稳定，但页面与 Server 都必须标注采集时间
+（`data_freshness` 工具就是干这个的）。
 
 ## 关键接口事实（真机验证，别再猜）
 

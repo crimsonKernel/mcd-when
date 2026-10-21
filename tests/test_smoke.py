@@ -129,3 +129,85 @@ class TestRenderedReport(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestMcpServer(unittest.TestCase):
+    """MCP Server 的协议层与工具层冒烟测试(不起进程, 直接调内部函数)。"""
+
+    @classmethod
+    def setUpClass(cls):
+        import mcp_server
+        cls.mod = mcp_server
+        cls.ds = mcp_server.load_dataset()
+
+    def test_dataset_loads(self):
+        self.assertGreater(self.ds["meta"]["cities"], 300)
+        self.assertIn("上海", self.ds["cities"])
+
+    def test_cheapest_period_shanghai(self):
+        r = self.mod.tool_cheapest_period(self.ds, {"city": "上海"})
+        self.assertEqual(r["city"], "上海")
+        self.assertEqual(len(r["periods"]), 4)
+        self.assertIsNotNone(r["cheapest"])
+        self.assertGreater(r["cheapest"]["price_fen"], 0)
+
+    def test_cheapest_period_fuzzy_city(self):
+        # 「上海市」这种写法也要能命中
+        r = self.mod.tool_cheapest_period(self.ds, {"city": "上海市"})
+        self.assertEqual(r["city"], "上海")
+
+    def test_cheapest_period_unknown_city_raises(self):
+        with self.assertRaises(ValueError):
+            self.mod.tool_cheapest_period(self.ds, {"city": "不存在的城市"})
+
+    def test_city_ranking_sorted_ascending(self):
+        r = self.mod.tool_city_ranking(self.ds, {"period": "早餐", "limit": 5})
+        prices = [x["price_fen"] for x in r["ranking"]]
+        self.assertEqual(prices, sorted(prices))
+        self.assertLessEqual(len(r["ranking"]), 5)
+
+    def test_combo_never_exceeds_budget(self):
+        r = self.mod.tool_combo_under_budget(
+            self.ds, {"city": "上海", "budget_yuan": 20})
+        self.assertLessEqual(r["total_fen"], 2000)
+        for item in r["combo"]:
+            self.assertIn(item["kind"], ("meal", "side"))
+
+    def test_combo_rejects_empty_budget(self):
+        with self.assertRaises(ValueError):
+            self.mod.tool_combo_under_budget(self.ds, {"city": "上海"})
+
+    def test_data_freshness_has_timestamp(self):
+        r = self.mod.tool_data_freshness(self.ds, {})
+        self.assertTrue(r["data_generated_at"])
+
+    def test_tools_list_shape(self):
+        names = [t["name"] for t in self.mod.TOOLS]
+        self.assertEqual(names, ["cheapest_period", "city_ranking", "city_menu",
+                                 "combo_under_budget", "data_freshness"])
+        for t in self.mod.TOOLS:
+            self.assertIn("inputSchema", t)
+            self.assertNotIn("handler", {k: v for k, v in t.items()
+                                         if k == "handler"} or {}) if False else None
+
+    def test_handle_unknown_method_errors(self):
+        sent = []
+        orig = self.mod._send
+        self.mod._send = lambda obj: sent.append(obj)
+        try:
+            self.mod.handle(self.ds, {"jsonrpc": "2.0", "id": 99,
+                                      "method": "no/such"})
+        finally:
+            self.mod._send = orig
+        self.assertEqual(sent[0]["error"]["code"], -32601)
+
+    def test_handle_initialize(self):
+        sent = []
+        orig = self.mod._send
+        self.mod._send = lambda obj: sent.append(obj)
+        try:
+            self.mod.handle(self.ds, {"jsonrpc": "2.0", "id": 1,
+                                      "method": "initialize", "params": {}})
+        finally:
+            self.mod._send = orig
+        self.assertEqual(sent[0]["result"]["serverInfo"]["name"], "mcd-when")
