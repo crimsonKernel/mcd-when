@@ -5,6 +5,11 @@
 # 原始采样数据(含门店等个人信息, 且量大)
 snapshots/
 
+# 历史数据备份 —— 已从 git 历史中清除(共 37MB), 不再入库
+# 现存档在仓库外, 需要追溯 bug 修复前后对比时再手动取用
+data/*.prereclass.json
+data/*.bugged-*.json
+
 # Python
 __pycache__/
 *.pyc
