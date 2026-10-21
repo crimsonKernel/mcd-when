@@ -35,31 +35,31 @@ PERIOD_ICON = {"早餐": "🌅", "午餐": "🍔", "下午茶": "🍰", "夜市"
 CSS = """
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:#f6f7f9;color:#1f2329;
+body{margin:0;background:#FBF7F2;color:#1f2329;
  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",
    "Noto Sans CJK SC",system-ui,-apple-system,sans-serif;
  font-size:16px;line-height:1.7;padding:20px 14px 40px;
  word-break:break-word;overflow-wrap:break-word}
 .wrap{max-width:820px;margin:0 auto}
 
-/* —— 头部: 黄金3秒钩子 —— */
-.hero{background:linear-gradient(135deg,#E1121F 0%,#C0101A 55%,#A50F18 100%);
- color:#fff;border-radius:18px;padding:26px 22px 22px;margin:0 0 16px;
- box-shadow:0 2px 4px rgba(120,10,16,.18),0 14px 34px rgba(120,10,16,.22)}
-.hero .hook{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);
- color:#FFD75E;font-size:13.5px;font-weight:800;letter-spacing:.4px;padding:5px 12px;
+/* —— 头部: 黄金3秒钩子(暖奶油) —— */
+.hero{background:linear-gradient(135deg,#FFFDF9 0%,#FDF1E3 100%);
+ color:#2B1B12;border-radius:18px;padding:26px 22px 22px;margin:0 0 16px;
+ box-shadow:0 1px 2px rgba(120,80,20,.06),0 10px 26px rgba(120,80,20,.09)}
+.hero .hook{display:inline-block;background:#FFF1E2;border:1px solid #F2D9B6;
+ color:#B4531A;font-size:13.5px;font-weight:800;letter-spacing:.4px;padding:5px 12px;
  border-radius:20px;margin:0 0 12px}
-.hero h1{font-size:34px;line-height:1.25;margin:0 0 10px;color:#fff;letter-spacing:-.4px}
-.hero .hsub{font-size:16px;color:rgba(255,255,255,.92);margin:0 0 16px;line-height:1.65}
-.hero .hsub b{color:#FFD75E}
+.hero h1{font-size:34px;line-height:1.25;margin:0 0 10px;color:#7C1D12;letter-spacing:-.4px}
+.hero .hsub{font-size:16px;color:#5A4638;margin:0 0 16px;line-height:1.65}
+.hero .hsub b{color:#B4531A}
 .hero-stats{display:flex;flex-wrap:wrap;gap:8px}
-.hero-stats .hs{background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.2);
- border-radius:10px;padding:7px 12px;font-size:13.5px;color:rgba(255,255,255,.9)}
-.hero-stats .hs b{font-size:17px;color:#FFD75E;font-variant-numeric:tabular-nums;
+.hero-stats .hs{background:#fff;border:1px solid #F0E2CE;
+ border-radius:10px;padding:7px 12px;font-size:13.5px;color:#6B5747}
+.hero-stats .hs b{font-size:17px;color:#C2410C;font-variant-numeric:tabular-nums;
  font-weight:800;margin-right:3px}
 h1{font-size:28px;line-height:1.35;margin:0 0 8px;letter-spacing:-.2px}
 p{margin:0 0 12px}
-a{color:#A50F18}
+a{color:#8C2F0B}
 .lead{font-size:16px;color:#3d4450;margin:0 0 16px}
 .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 .sub{color:#6b7280;font-size:14px;margin:0}
@@ -79,16 +79,16 @@ select.sel{font:inherit;font-size:16px;padding:9px 12px;border:1px solid #d7dbe3
 .chip{display:inline-block;padding:6px 13px;border:1px solid #d7dbe3;border-radius:20px;
  background:#fff;color:#1f2329;font-size:14.5px;cursor:pointer;line-height:1.5;
  transition:border-color .15s,color .15s,background .15s,transform .15s}
-.chip:hover{border-color:#C4161C;color:#C4161C}
-.chip.on{background:#C4161C;border-color:#C4161C;color:#fff;font-weight:700;transform:scale(1.05)}
+.chip:hover{border-color:#C2410C;color:#C2410C}
+.chip.on{background:#C2410C;border-color:#C2410C;color:#fff;font-weight:700;transform:scale(1.05)}
 .hintline{font-size:13.5px;color:#6b7280;margin:8px 0 0}
 select{font:inherit;font-size:16px;padding:8px 12px;border:1px solid #d7dbe3;border-radius:10px;
  background:#fff;color:#1f2329;max-width:100%;transition:border-color .15s}
-select:focus{border-color:#C4161C;outline:2px solid rgba(196,22,28,.16)}
+select:focus{border-color:#C2410C;outline:2px solid rgba(194,65,12,.14)}
 button.now{font:inherit;font-size:15px;padding:8px 16px;border:1px solid #d7dbe3;
  border-radius:10px;background:#f0f2f5;color:#1f2329;cursor:pointer;
  transition:border-color .15s,color .15s,background .15s}
-button.now:hover{border-color:#C4161C;color:#C4161C;background:#fdeeee}
+button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
 
 /* —— 答案区 —— */
 .state{font-size:15px;font-weight:700;padding:10px 14px;border-radius:10px;margin:0 0 14px}
@@ -96,12 +96,12 @@ button.now:hover{border-color:#C4161C;color:#C4161C;background:#fdeeee}
 .state.gap{background:#fff4ce;color:#8a6100;border:1px solid #f0d999}
 .state.closed{background:#f1f2f5;color:#5b6472;border:1px solid #dfe2e8}
 .big{font-size:14.5px;color:#6b7280;margin:0 0 2px}
-.anshero{background:linear-gradient(135deg,#FFF6DF 0%,#FFFDF6 60%);border:1px solid #F2D77A;
+.anshero{background:linear-gradient(135deg,#FFF8EF 0%,#FFFDFA 70%);border:1px solid #F2D9B6;
  border-radius:14px;padding:14px 16px 12px;margin:2px 0 12px;
- box-shadow:0 1px 2px rgba(180,130,20,.08),0 6px 18px rgba(180,130,20,.10)}
+ box-shadow:0 1px 2px rgba(140,90,20,.07),0 6px 18px rgba(140,90,20,.09)}
 .anshero .ansname{margin-bottom:0}
 .ansprice{font-size:64px;font-weight:800;letter-spacing:-2.5px;line-height:1.05;margin:2px 0 4px;
- color:#C4161C;font-variant-numeric:tabular-nums}
+ color:#B4531A;font-variant-numeric:tabular-nums}
 .pdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;
  vertical-align:middle}
 .ansname{font-size:19px;font-weight:700;margin:0 0 4px}
@@ -118,7 +118,7 @@ button.now:hover{border-color:#C4161C;color:#C4161C;background:#fdeeee}
  transition:width .25s ease-out}
 .cmp .pv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
 .cmp .row.cur .nm{color:#1f2329;font-weight:800}
-.cmp .row.cur .pv{color:#C4161C}
+.cmp .row.cur .pv{color:#B4531A}
 .cmp .row:not(.cur){opacity:.62}
 
 /* —— 答案卡切换动画 —— */
@@ -156,25 +156,32 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 @media (prefers-color-scheme:dark){
   body{background:#121418;color:#e7eaf0}
   .lead{color:#b9c0cc}
-  a{color:#E37B7B}
+  a{color:#E8936B}
   .sub,.big,.anshint,.more,.hintline,.qlab{color:#9aa3b2}
   .card,.q,details{background:#1b1e24;border-color:#2c313a;box-shadow:none}
   details summary{background:#20242c}
   select.sel,select{background:#22262e;border-color:#3a414c;color:#e7eaf0}
-  select:focus{border-color:#E37B7B;outline-color:rgba(227,123,123,.22)}
+  select:focus{border-color:#E8936B;outline-color:rgba(232,147,107,.22)}
   button.now{background:#262b34;border-color:#3a414c;color:#e7eaf0}
-  button.now:hover{border-color:#E37B7B;color:#E37B7B;background:#262f3d}
+  button.now:hover{border-color:#E8936B;color:#E8936B;background:#262f3d}
   .chip{background:#22262e;border-color:#3a414c;color:#e7eaf0}
-  .chip:hover{border-color:#E37B7B;color:#E37B7B}
-  .chip.on{background:#C4161C;border-color:#C4161C;color:#fff}
+  .chip:hover{border-color:#E8936B;color:#E8936B}
+  .chip.on{background:#C2410C;border-color:#C2410C;color:#fff}
   .state.ok{background:#123322;color:#7fd6a4;border-color:#1f5a3a}
   .state.gap{background:#3a2f10;color:#f0d48a;border-color:#6b5518}
   .state.closed{background:#22262e;color:#9aa3b2;border-color:#3a414c}
-  .anshero{background:linear-gradient(135deg,#2A1E08,#1F1A0C);border-color:#5e4a15;box-shadow:none}
-  .ansprice{color:#FFC72C}
-  .cmp .row.cur .pv{color:#FFC72C}
+  .anshero{background:linear-gradient(135deg,#241A0D,#1C1409);border-color:#5E4318;box-shadow:none}
+  .anshero .big{color:#B9A68E}.anshero .ansname{color:#F0E7DB}
+  .ansprice{color:#F5B45B}
+  .cmp .row.cur .pv{color:#F5B45B}
   .cmp .row.cur .nm{color:#e7eaf0}
-  .hero{background:linear-gradient(135deg,#8E0C14,#6C0A11);box-shadow:none}
+  .hero{background:linear-gradient(135deg,#2E1E0F,#1E1409);box-shadow:none}
+  .hero h1{color:#F7E3C9}
+  .hero .hsub{color:#CBB79C}
+  .hero .hsub b{color:#F5B45B}
+  .hero .hook{background:#3A2712;border-color:#6B4A1F;color:#F5B45B}
+  .hero-stats .hs{background:#2A1D0F;border-color:#4A3418;color:#CBB79C}
+  .hero-stats .hs b{color:#F5B45B}
   .ansline{background:#1a2333;border-color:#2c3d5c}
   ul.can{border-top-color:#2c313a}
   ul.can li{border-bottom-color:#2c313a}
