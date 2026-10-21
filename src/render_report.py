@@ -24,8 +24,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SURFACE_PATH = ROOT / "data" / "surface_national.json"
+BATCH_PATH = ROOT / "data" / "surface_batch.json"
 LEGACY_PATH = ROOT / "data" / "surface.json"
 OUT_PATH = ROOT / "dist" / "report.html"
+
+# 全菜单采集(survey_batch.py)覆盖到这个城市数就优先用它渲染 ——
+# 它比探针快照多出完整菜单, 且口径与 MCP Server 一致。
+FULL_MENU_MIN_CITIES = 50
 
 HOT_CITIES = ["北京", "上海", "广州", "深圳", "成都", "重庆", "武汉", "西安",
               "杭州", "南京", "长沙", "郑州"]
@@ -718,13 +723,61 @@ def all_cities_block(cities: list[dict]) -> str:
     return "".join(out)
 
 
+def hero_facts(cities_raw: list[dict]) -> dict:
+    """首屏钩子用的真数 —— 全部从数据现算, 不写死(数据一刷新文案就跟着对)。"""
+    def floor(c, per):
+        f = (c.get("floors") or {}).get("pickup", {}).get(per) or {}
+        m = f.get("meal")
+        return m["price"] if m else None
+
+    gaps = []
+    for c in cities_raw:
+        bf, lf = floor(c, "早餐"), floor(c, "午餐")
+        if bf and lf and lf > bf:
+            gaps.append((lf - bf, c["city"], bf, lf))
+    gaps.sort(reverse=True)
+    bf_all = sorted(x for x in (floor(c, "早餐") for c in cities_raw) if x)
+    lf_all = sorted(x for x in (floor(c, "午餐") for c in cities_raw) if x)
+
+    def med(xs):
+        return xs[len(xs) // 2] if xs else 0
+
+    gap, gap_city, gap_bf, gap_lf = gaps[0] if gaps else (0, "", 0, 0)
+    cheaper = sum(1 for c in cities_raw
+                  if (floor(c, "午餐") or 0) and (floor(c, "早餐") or 0)
+                  and floor(c, "午餐") < floor(c, "早餐"))
+    return {
+        "gap": gap, "gap_city": gap_city, "gap_bf": gap_bf, "gap_lf": gap_lf,
+        "bf_med": med(bf_all), "lf_med": med(lf_all),
+        "bf_n": len(bf_all), "lf_n": len(lf_all),
+        "cheaper_n": cheaper,
+    }
+
+
 def main() -> int:
-    path = SURFACE_PATH if SURFACE_PATH.exists() else LEGACY_PATH
+    path = SURFACE_PATH
+    if BATCH_PATH.exists():
+        try:
+            n_batch = len(json.loads(BATCH_PATH.read_text(encoding="utf-8"))
+                          .get("cities") or [])
+        except (json.JSONDecodeError, OSError):
+            n_batch = 0
+        if n_batch >= FULL_MENU_MIN_CITIES:
+            path = BATCH_PATH
     if not path.exists():
-        print(f"未找到 {SURFACE_PATH}。先跑: python src/survey_national.py")
+        print(f"未找到 {path}。先跑: python src/survey_batch.py")
         return 1
     surface = json.loads(path.read_text(encoding="utf-8"))
-    cities_raw = surface.get("cities") or []
+    cities_raw = list(surface.get("cities") or [])
+    if path == BATCH_PATH and SURFACE_PATH.exists():
+        # 全菜单采集有 8 座城因「候选门店均不支持预约取餐(600056)」没采到,
+        # 用探针快照补上, 别让页面比探针版少城市。
+        probe = json.loads(SURFACE_PATH.read_text(encoding="utf-8"))
+        have = {c.get("city") for c in cities_raw}
+        extra = [c for c in (probe.get("cities") or []) if c.get("city") not in have]
+        cities_raw += extra
+        surface = dict(surface)
+        surface["cities"] = cities_raw
     if not cities_raw:
         print("数据里没有城市。")
         return 1
@@ -740,6 +793,7 @@ def main() -> int:
     n_calls = sum(c.get("calls", 0) for c in cities_raw)
     gen = escape(str(surface.get("generatedAt", datetime.now().isoformat(timespec="seconds"))))
     target = escape(str(surface.get("targetDate", "")))
+    hf = hero_facts(cities_raw)
     overview = national_overview(cities_raw)
     citylist = all_cities_block(cities_raw)
 
@@ -770,9 +824,10 @@ def main() -> int:
 <style>{CSS}</style></head><body>
 <div class="wrap">
 <header class="hero">
-  <p class="hook">同一家麦当劳，早晚最贵能差 ¥35</p>
+  <p class="hook">同一家麦当劳，换个时段最便宜能差 ¥{hf['gap'] / 100:.2f}</p>
   <h1>麦当劳几点最便宜</h1>
-  <p class="hsub">拉萨早餐最便宜一餐 ¥14.00，到了午餐档就是 ¥49.00。
+  <p class="hsub">{hf['gap_city']}早餐最便宜一餐 ¥{hf['gap_bf'] / 100:.2f}，同一个午餐档就要 ¥{hf['gap_lf'] / 100:.2f}。
+  全国 {hf['bf_n']} 座城早餐有正餐地板价、中位 ¥{hf['bf_med'] / 100:.2f}，午餐中位 ¥{hf['lf_med'] / 100:.2f}。
   选<b>城市</b>、选<b>几点去</b>，直接告诉你<b>那一刻最便宜能吃什么、多少钱</b>。</p>
   <div class="hero-stats">
     <span class="hs"><b>{n_cities}</b>座城市</span>

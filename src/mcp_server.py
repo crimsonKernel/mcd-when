@@ -257,7 +257,8 @@ def tool_combo_under_budget(ds: dict, args: dict) -> dict:
         if not m["prices"]:
             continue
         p = m["prices"].get(period) if period else min(m["prices"].values())
-        if p is None or p <= 0 or p > limit:
+        # ¥5 以下的一律不当饭(实测有 ¥2 的联名饼干、¥3 的蘸酱包会污染搭配)
+        if p is None or p < 500 or p > limit:
             continue
         cands.append({"code": code, "name": m["name"], "kind": m["kind"],
                       "price_fen": p})
@@ -265,21 +266,26 @@ def tool_combo_under_budget(ds: dict, args: dict) -> dict:
         return {"city": city, "budget": _yuan(limit), "combo": [],
                 "note": "该条件下没有可预算内可售商品"}
 
-    # 0/1 背包: 价值=1 件, 重量=价格; 追求件数最多, 同件数取花费更少
+    # 0/1 背包。目标不是单纯件数最多 —— 四个甜筒凑 ¥20 谁也不叫"一顿午饭"。
+    # 所以排序键是 (有没有主食, 件数, -花费): 先保证有一口能当饭的, 再尽量多件。
     cands.sort(key=lambda x: x["price_fen"])
     n = len(cands)
-    NEG = -1
-    # dp[k] = 花费 k 分时最多能买几件; 同时记录选择
+    NEG = (-1, -1)
     dp = [NEG] * (limit + 1)
     pick: list[list[int]] = [[] for _ in range(limit + 1)]
-    dp[0] = 0
+    dp[0] = (0, 0)
     for i, it in enumerate(cands):
         w = it["price_fen"]
+        is_meal = 1 if it["kind"] == "meal" else 0
         for k in range(limit, w - 1, -1):
-            if dp[k - w] >= 0 and dp[k - w] + 1 > dp[k]:
-                dp[k] = dp[k - w] + 1
+            if dp[k - w][0] < 0:
+                continue
+            cand = (dp[k - w][0] or is_meal, dp[k - w][1] + 1)
+            if cand > dp[k]:
+                dp[k] = cand
                 pick[k] = pick[k - w] + [i]
-    best_k = max(range(limit + 1), key=lambda k: (dp[k], -k))
+    best_k = max(range(limit + 1),
+                 key=lambda k: (dp[k][0], dp[k][1], -k) if dp[k][0] >= 0 else (-1, -1, 0))
     combo = [{"name": cands[i]["name"], "kind": cands[i]["kind"],
               "price_fen": cands[i]["price_fen"],
               "price": _yuan(cands[i]["price_fen"])} for i in pick[best_k]]
@@ -355,8 +361,9 @@ TOOLS = [
     },
     {
         "name": "combo_under_budget",
-        "description": ("预算内怎么点最「饱」: 给定城市+时段+预算(元), 用 0/1 背包在本地菜单数据里"
-                        "求出件数最多的搭配, 并给出最便宜的单品作对照。零 Token, 纯本地计算。"),
+        "description": ("预算内怎么点最「像一顿饭」: 给定城市+时段+预算(元), 用 0/1 背包"
+                        "在本地菜单数据里求「保证有主食的前提下件数最多」的搭配, "
+                        "并给出最便宜的单品作对照。零 Token, 纯本地计算。"),
         "inputSchema": {
             "type": "object",
             "properties": {

@@ -19,136 +19,6 @@
 }
 ```
 
-## cheapest_period(上海)
-
-```json
-{
- "city": "上海",
- "province": "上海",
- "store": "麦当劳上海闸北虬江路永兴汇餐厅",
- "business_hours": [
-  "07:00",
-  "23:00"
- ],
- "periods": [
-  {
-   "period": "早餐",
-   "start": "07:14",
-   "end": "10:15",
-   "cheapest_meal": {
-    "name": "芝芝火腿扒堡组合",
-    "price_fen": 990,
-    "price": "¥9.90"
-   },
-   "cheapest_any": {
-    "name": "灰焰圆筒",
-    "price_fen": 500,
-    "price": "¥5.00"
-   }
-  },
-  {
-   "period": "午餐",
-   "start": "10:44",
-   "end": "14:15",
-   "cheapest_meal": {
-    "name": "冰浓浓黑巧中杯",
-    "price_fen": 1390,
-    "price": "¥13.90"
-   },
-   "cheapest_any": {
-    "name": "灰焰圆筒",
-    "price_fen": 500,
-    "price": "¥5.00"
-   }
-  },
-  {
-   "period": "下午茶",
-   "start": "14:44",
-   "end": "16:45",
-   "cheapest_meal": {
-    "name": "冰浓浓黑巧中杯",
-    "price_fen": 1390,
-    "price": "¥13.90"
-   },
-   "cheapest_any": {
-    "name": "灰焰圆筒",
-    "price_fen": 500,
-    "price": "¥5.00"
-   }
-  },
-  {
-   "period": "夜市",
-   "start": "17:14",
-   "end": "21:45",
-   "cheapest_meal": {
-    "name": "冰浓浓黑巧中杯",
-    "price_fen": 1390,
-    "price": "¥13.90"
-   },
-   "cheapest_any": {
-    "name": "灰焰圆筒",
-    "price_fen": 500,
-    "price": "¥5.00"
-   }
-  }
- ],
- "cheapest": {
-  "period": "早餐",
-  "name": "芝芝火腿扒堡组合",
-  "price_fen": 990,
-  "price": "¥9.90"
- },
- "data_generated_at": "2026-10-21T14:39:43"
-}
-```
-
-## city_ranking(午餐, top5)
-
-```json
-{
- "period": "午餐",
- "ranking": [
-  {
-   "city": "西安",
-   "province": "陕西",
-   "item": "派",
-   "price_fen": 950,
-   "price": "¥9.50"
-  },
-  {
-   "city": "北京",
-   "province": "北京",
-   "item": "蘸酱炸鸡",
-   "price_fen": 1190,
-   "price": "¥11.90"
-  },
-  {
-   "city": "天津",
-   "province": "天津",
-   "item": "蘸酱炸鸡",
-   "price_fen": 1190,
-   "price": "¥11.90"
-  },
-  {
-   "city": "深圳",
-   "province": "广东",
-   "item": "蘸酱炸鸡",
-   "price_fen": 1190,
-   "price": "¥11.90"
-  },
-  {
-   "city": "乌鲁木齐",
-   "province": "新疆",
-   "item": "蘸酱炸鸡",
-   "price_fen": 1190,
-   "price": "¥11.90"
-  }
- ],
- "total_cities": 386,
- "data_generated_at": "2026-10-21T14:39:43"
-}
-```
-
 ## combo_under_budget(上海, ¥25, 午餐)
 
 ```json
@@ -170,26 +40,67 @@
    "price": "¥5.00"
   },
   {
-   "name": "苹果片一袋(60g)",
-   "kind": "side",
-   "price_fen": 700,
-   "price": "¥7.00"
-  },
-  {
-   "name": "咖啡阿芙佳朵",
-   "kind": "side",
-   "price_fen": 750,
-   "price": "¥7.50"
+   "name": "精选超值随心配",
+   "kind": "meal",
+   "price_fen": 1390,
+   "price": "¥13.90"
   }
  ],
- "total_fen": 2450,
- "total": "¥24.50",
- "saved_vs_budget": "¥0.50",
+ "total_fen": 2390,
+ "total": "¥23.90",
+ "saved_vs_budget": "¥1.10",
  "cheapest_single": {
-  "name": "冰浓浓黑巧中杯",
+  "name": "精选超值随心配",
   "price": "¥13.90"
  },
  "menu_source": "full"
+}
+```
+
+## city_ranking(午餐, top5)
+
+```json
+{
+ "period": "午餐",
+ "ranking": [
+  {
+   "city": "宁波",
+   "province": "浙江",
+   "item": "牛肉堡单品精选",
+   "price_fen": 1350,
+   "price": "¥13.50"
+  },
+  {
+   "city": "昆明",
+   "province": "云南",
+   "item": "牛肉堡单品精选",
+   "price_fen": 1350,
+   "price": "¥13.50"
+  },
+  {
+   "city": "济南",
+   "province": "山东",
+   "item": "牛肉堡单品精选",
+   "price_fen": 1350,
+   "price": "¥13.50"
+  },
+  {
+   "city": "石家庄",
+   "province": "河北",
+   "item": "牛肉堡单品精选",
+   "price_fen": 1350,
+   "price": "¥13.50"
+  },
+  {
+   "city": "西宁",
+   "province": "青海",
+   "item": "牛肉堡单品精选",
+   "price_fen": 1350,
+   "price": "¥13.50"
+  }
+ ],
+ "total_cities": 386,
+ "data_generated_at": "2026-10-21T15:42:24"
 }
 ```
 
@@ -197,7 +108,7 @@
 
 ```json
 {
- "data_generated_at": "2026-10-21T14:39:43",
+ "data_generated_at": "2026-10-21T15:42:24",
  "data_target_date": "2026-10-22",
  "cities": 388,
  "menu_source": "full",
