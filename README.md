@@ -12,7 +12,8 @@
 
 ![PRs](https://img.shields.io/badge/PRs-welcome-blueviolet)
 
-> **同一家麦当劳，早晚最贵能差 ¥35。**
+> **同一家麦当劳，早晚最贵能差 ¥35。**
+
 > 拉萨早餐最便宜一餐 ¥14.00，到了午餐档就是 ¥49.00。
 >   
 > 我们把**全国 31 个省级行政区、388 座城市**的麦当劳都问了一遍——
@@ -29,11 +30,11 @@
 
 手机端实际效果（深色模式同理，会随系统自动切换）：
 
-![手机端实拍](images/usage-414.png)
+![手机端实拍](images/usage-mobile.png)
 
 桌面端：
 
-![桌面端实拍](images/usage-1280.png)
+![桌面端实拍](images/usage-desktop.png)
 
 </details>
 
