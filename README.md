@@ -122,6 +122,11 @@
 所以 ¥10 的午餐档会告诉你「吃不到一顿正经饭，最便宜的一餐 ¥13.90，还差 ¥3.90」，
 而不是扔给你两个冰淇淋凑数。
 
+页面上还嵌了这一档的**完整在售菜单**（全国 269 个唯一商品名，按下标编码只要 1.8 MB）：
+可以按价格/名称排序、只要主食或只要小食，也可以点任一行的「当主食」——
+你选的那件是**必选**的，剩下的钱自动配最多小食。网页端算的这套背包和 MCP 端
+逐分对拍过（`src/parity_combo.py`，207 个用例零不一致），同一个问题两个入口同一个答案。
+
 ## 它不做什么
 
 - **不估算价格** —— 所有数字只信 `calculate-price` 的实时返回
@@ -262,9 +267,11 @@ python src/now.py --city 上海
 ## 自检
 
 ```bash
-python -m unittest discover tests           # 33 项冒烟测试(数据/分类/算法/产物, 零依赖)
+python -m unittest discover tests           # 34 项冒烟测试(数据/分类/算法/产物, 零依赖)
+python src/render_report.py                 # 渲染报告(含内联脚本语法自检, 挂了会让构建失败)
+python src/parity_combo.py                  # 页面 JS 背包 vs Python 背包逐分对拍(207 例)
 python src/check_layout.py                  # 四视口零溢出体检
-python src/check_combo.py                   # 预算搭配器实测(无头浏览器, 覆盖预算不足路径)
+python src/check_combo.py                   # 预算搭配器实测(无头浏览器, 9 条交互路径)
 ```
 
 ## 参与方式
@@ -313,15 +320,15 @@ mcd-when/
 │   ├── analyze_surface.py     验证「价格全天恒定」等关键假设
 │   ├── analyze_national.py    全国结论汇总(开档时间/价差/异常值)
 │   ├── now.py                 此刻决策(当前最便宜/下一档倒计时)
-│   ├── render_report.py       渲染问答式报告 HTML(全国版)
+│   ├── render_report.py       渲染问答式报告 HTML(全国版, 嵌完整菜单)
 │   ├── render_card.py         渲染 README 首图(dist/card.html)
 │   ├── check_layout.py        排版零溢出体检(四视口自动检测)
-│   ├── check_combo.py         预算搭配器实测(无头浏览器点chip/填金额/预算不足)
+│   ├── check_combo.py         预算搭配器实测(无头浏览器走 9 条交互路径)
+│   ├── parity_combo.py        页面 JS 背包 vs Python 背包逐分对拍(207 例)
 │   ├── combo.py               「预算内怎么点最饱」核心算法(MCP 与页面共用)
-│   ├── combo_precompute.py    全国预算搭配预计算(输出 data/combos.json)
 │   ├── mcp_server.py          本地 MCP Server(5 个工具, 零 Token)
 │   └── make_demo.py           演示数据生成(仅预览 UI)
-├── data/                      combos.json(预算搭配表) / 价格表 / 城市探测
+├── data/                      价格表 / 城市探测 / 工具 schema
 ├── images/                    README 首图 + 实拍截图
 └── dist/                      report.html(交互报告) / card.html(首图源)
 ```

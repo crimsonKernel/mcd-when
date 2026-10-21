@@ -189,6 +189,13 @@ ul.can li span.p{font-weight:700;font-variant-numeric:tabular-nums;white-space:n
 .bout .bgap{font-size:13.5px;color:#8a6100;margin:8px 0 0;padding:9px 11px;
  background:#FFF4CE;border:1px solid #F0D999;border-radius:9px}
 .bout .bnote{font-size:12.5px;color:#9C8873;margin:8px 0 0}
+.bout .btip{font-size:13px;color:#8a6100;margin:10px 0 0;padding:9px 11px;
+ background:#FFF9EC;border:1px dashed #E8C89A;border-radius:9px}
+.bout .btip b{color:#B4531A}
+.bout .banchor{font-size:14px;font-weight:700;margin:0 0 10px;color:#1f2329;
+ padding:9px 11px;background:#fff;border:1px solid #E8C89A;border-radius:9px}
+.bout .banchor b{color:#B4531A}
+.bout .banchor a{color:#5B8DEF;font-weight:400;font-size:12.5px;margin-left:4px}
 ul.bcombo{margin:0;padding:0;list-style:none;border-top:1px solid #F0E2CC}
 ul.bcombo li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
  padding:9px 2px;border-bottom:1px solid #F0E2CC;font-size:15px}
@@ -197,7 +204,42 @@ ul.bcombo li .k{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:9
  flex:none;margin-right:2px}
 ul.bcombo li .k.m{background:#FDECEC;color:#B4322E}
 ul.bcombo li .k.s{background:#EAF1FE;color:#3B6BC4}
+ul.bcombo li .k.x{background:#F1F2F5;color:#6b7280}
 ul.bcombo li .p{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* —— 完整在售菜单表 —— */
+.mtwrap{margin:20px 0 0}
+.mthead{display:flex;justify-content:space-between;align-items:center;
+ gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.mtctl{display:flex;gap:6px;flex-wrap:wrap}
+.mtbtn{font:inherit;font-size:12.5px;font-weight:700;padding:5px 11px;border-radius:999px;
+ border:1px solid #E3E6EC;background:#fff;color:#6b7280;cursor:pointer;transition:all .15s ease}
+.mtbtn:hover{border-color:#C2410C;color:#C2410C}
+.mtbtn.on{background:#1f2329;border-color:#1f2329;color:#fff}
+.mtscroll{max-height:430px;overflow-y:auto;border:1px solid #E3E6EC;border-radius:12px;
+ background:#fff}
+table.mt{width:100%;border-collapse:collapse;font-size:14px}
+table.mt thead th{position:sticky;top:0;background:#F6F7F9;text-align:left;
+ padding:9px 10px;border-bottom:1px solid #E3E6EC;font-size:12.5px;color:#6b7280;
+ white-space:nowrap;z-index:1}
+table.mt td{padding:8px 10px;border-bottom:1px solid #F2F3F5;vertical-align:middle}
+table.mt tbody tr:last-child td{border-bottom:none}
+table.mt tbody tr:hover{background:#FAFBFC}
+table.mt tbody tr.on{background:#FFF6E8}
+table.mt td.p{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;
+ white-space:nowrap}
+table.mt td.a{text-align:right;white-space:nowrap}
+table.mt .k{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;
+ white-space:nowrap}
+table.mt .k.m{background:#FDECEC;color:#B4322E}
+table.mt .k.s{background:#EAF1FE;color:#3B6BC4}
+table.mt .k.x{background:#F1F2F5;color:#6b7280}
+.mtpick{font:inherit;font-size:12px;font-weight:700;padding:4px 10px;border-radius:7px;
+ border:1px solid #E8C89A;background:#FFFDF8;color:#8a6100;cursor:pointer;
+ transition:all .15s ease;white-space:nowrap}
+.mtpick:hover{border-color:#C2410C;color:#C2410C;background:#fff}
+.mtnote{font-size:12.5px;color:#8a6100;margin:0 0 8px;padding:8px 11px;
+ background:#FFF4CE;border:1px solid #F0D999;border-radius:9px}
 @media (prefers-color-scheme:dark){
   .budget{background:#241F16;border-color:#4A412F}
   .budget .bq{color:#E9C46A}
@@ -210,10 +252,29 @@ ul.bcombo li .p{font-weight:700;font-variant-numeric:tabular-nums;white-space:no
   .bout .btot{color:#9aa3b2}
   .bout .bgap{background:#2A241B;border-color:#4A412F;color:#E9C46A}
   .bout .bnote{color:#9A8672}
+  .bout .btip{background:#2A241B;border-color:#4A412F;color:#E9C46A}
+  .bout .banchor{background:#22262E;border-color:#4A412F;color:#e7eaf0}
+  .bout .banchor b{color:#F0A96B}
+  .bout .banchor a{color:#9DBBF0}
   ul.bcombo{border-top-color:#3A332A}
   ul.bcombo li{border-bottom-color:#3A332A}
   ul.bcombo li .k.m{background:#3A2422;color:#F0A6A2}
   ul.bcombo li .k.s{background:#1F2A3A;color:#9DBBF0}
+  ul.bcombo li .k.x{background:#2A2E36;color:#9aa3b2}
+  .mtbtn{background:#22262E;border-color:#3A414D;color:#9aa3b2}
+  .mtbtn:hover{border-color:#C2410C;color:#F0A96B}
+  .mtbtn.on{background:#E9D9C4;border-color:#E9D9C4;color:#1f2329}
+  .mtscroll{background:#1A1D23;border-color:#3A414D}
+  table.mt thead th{background:#22262E;border-bottom-color:#3A414D;color:#9aa3b2}
+  table.mt td{border-bottom-color:#262A31}
+  table.mt tbody tr:hover{background:#22262E}
+  table.mt tbody tr.on{background:#2E2818}
+  table.mt .k.m{background:#3A2422;color:#F0A6A2}
+  table.mt .k.s{background:#1F2A3A;color:#9DBBF0}
+  table.mt .k.x{background:#2A2E36;color:#9aa3b2}
+  .mtpick{background:#22262E;border-color:#4A412F;color:#E9D9C4}
+  .mtpick:hover{border-color:#C2410C;color:#F0A96B;background:#2A241B}
+  .mtnote{background:#2A241B;border-color:#4A412F;color:#E9C46A}
 }
 @media (max-width:520px){
   .budget{padding:12px}
@@ -559,19 +620,10 @@ JS = """
     }
 
     // 预算搭配器 —— 竞争对手的杀手锏是「怎么点最省」, 我们用 388 城真实数据回答
-    if (CB[cur.city]) {
-      out.push(budgetBox(cur.city, p.name));
-    }
+    out.push(budgetBox(cur.city, p.name));
 
-    if (p.top && p.top.length) {
-      out.push('<p class="big" style="margin-top:16px">这一档便宜的几样（从便宜到贵）</p>');
-      out.push('<ul class="can">');
-      for (var m2 = 0; m2 < p.top.length; m2++) {
-        out.push('<li><span class="n">' + esc(p.top[m2].n) + '</span><span class="p">'
-          + yuan(p.top[m2].p) + "</span></li>");
-      }
-      out.push("</ul>");
-    }
+    // 完整在售菜单: 可排序、可按主食/小食过滤、可点「当主食」喂给上面的搭配器
+    out.push(menuTable(cur.city, p.name));
 
     // 得来速(车道取餐)更便宜的
     if (city.dtCheaper && city.dtCheaper.length) {
@@ -592,7 +644,8 @@ JS = """
       + "<code>?" + "city=" + encodeURIComponent(city.city) + "&amp;t=" + esc(t) + "</code></p>");
     out.push("</div>");
     document.getElementById("ans").innerHTML = out.join("");
-    if (CB[cur.city]) bindBudget(cur.city, p.name);
+    bindBudget(cur.city, p.name);
+    bindMenuTable(cur.city, p.name);
     syncUrl();
   }
 
@@ -601,97 +654,237 @@ JS = """
   function pdot(nm) { return '<span class="pdot" style="background:' + pcol(nm) + '"></span>'; }
 
   /* ---- 预算搭配器: 「¥__ 能吃到最饱的」 ----
-     数据来自 src/combo_precompute.py 的服务端预计算(全局商品名表压缩)。
-     用户填任意金额, 向下取到最近的一档预算; 取不到档位就说「吃不到一顿正经饭」。 */
-  var CB = (DATA.combos && DATA.combos.cities) || {};
-  var CN = (DATA.combos && DATA.combos.names) || [];
-  var CBUD = (DATA.combos && DATA.combos.budgets) || [];
+     数据就是页面里嵌的完整菜单(DATA.mn 名称表 + city.periods[i].menu),
+     背包在前端现算 —— 全国只有 269 个商品名, 完整菜单嵌进来也只要 1.8MB,
+     比「预计算搭配表」还小, 却换来三件事:
+       1. 任意金额(不再受 ¥10~50 阶梯限制)
+       2. 主动选主食: 点任一件当主食, 剩下的钱自动配最多小食
+       3. 完整菜单浏览(见下方 menuTable)
+     算法与 src/combo.py 完全一致: 有主食是硬约束, 约束内件数最多, 并列取更省。 */
+  var MN = DATA.mn || [];
+  var KIND_LABEL = ["小食", "主食", "配料"];
+  var MAX_BUDGET_FEN = 10000;      // ¥100 封顶, 再高没有实际意义
+  var BUDGET_PRESETS = [1000, 1500, 2000, 2500, 3000, 4000, 5000];
 
-  function comboLookup(cityName, period, budgetFen) {
-    var e = CB[cityName];
-    if (!e) return null;
-    var pe = e[period];
-    if (!pe) return null;
-    // 向下取到最近的一档
-    var use = null;
-    for (var i = 0; i < CBUD.length; i++) {
-      var b = CBUD[i];
-      if (b <= budgetFen && pe.b && pe.b[String(b)]) use = b;
+  /* 当前选中的「主食锚点」: {ni, pf} —— 名称下标 + 价格(分) */
+  var anchor = null;
+
+  function periodMenu(city, period) {
+    for (var i = 0; i < city.periods.length; i++) {
+      if (city.periods[i].name === period) return city.periods[i].menu || [];
     }
-    if (use == null) return { gap: true, cheapest: pe.best };
-    return { budget: use, combo: pe.b[String(use)], cheapest: pe.best,
-             exact: use === budgetFen };
+    return [];
+  }
+
+  /* 纯 0/1 背包(无锚点)。二维 DP ——
+     一开始用「父指针回溯」(from[k]/took[k]), 是错的: dp[k-w] 可能在 dp[k]
+     定稿之后才被改进, 回溯时会把同一件商品取三遍(实测 ¥80 北京早餐
+     取出 3 个相同的 ¥10 主食)。Python 版存完整路径快照所以没错,
+     这里用二维表 + 逐行回溯, 既正确又快。
+     code = 有主食 ? 64+件数 : 件数; -1 = 不可达。比较 code 等价于
+     比较 (有没有主食, 件数) 这个二元组。 */
+  function knapInner(menu, limitFen) {
+    var cands = [];
+    for (var i = 0; i < menu.length; i++) {
+      var m = menu[i];
+      if (m[2] === 2) continue;                      // 配料不当饭
+      if (m[1] < 500) continue;                      // ¥5 以下不当饭
+      if (m[1] > limitFen) continue;
+      cands.push(m);
+    }
+    if (!cands.length) return {total: 0, items: [], hasMeal: false};
+
+    var n = cands.length, W = limitFen + 1;
+    var dp = new Int8Array((n + 1) * W).fill(-1);
+    dp[0] = 0;                                       // 前 0 件、容量 0
+    for (var i2 = 0; i2 < n; i2++) {
+      var w = cands[i2][1], im = cands[i2][2] === 1 ? 64 : 0;
+      var rowOff = i2 * W, nextOff = (i2 + 1) * W;
+      for (var k = 0; k <= limitFen; k++) {
+        var best = dp[rowOff + k];                   // 不选第 i2 件
+        if (k >= w) {
+          var p = dp[rowOff + (k - w)];              // 选: 从前 i2 件、容量 k-w 转移
+          if (p >= 0) {
+            var cnt = p >= 64 ? p - 64 : p;
+            // hasMeal 是布尔或, 不能相加: 64+64 会溢出 Int8(>127 回绕成负数,
+            // 整条转移被当成不可达丢掉 —— 曾导致前端少算 2 件)
+            var mealFlag = (p >= 64 || im) ? 64 : 0;
+            var c = mealFlag + cnt + 1;
+            if (c > best) best = c;                  // 严格大于: 并列时 prefer 不选
+          }
+        }
+        dp[nextOff + k] = best;
+      }
+    }
+    // 只认含主食的解 —— 硬门槛, 不是优先级; 件数相同取更便宜的总价
+    var lastOff = n * W, bestK = -1, bestCode = -1;
+    for (var k2 = 0; k2 <= limitFen; k2++) {
+      var c2 = dp[lastOff + k2];
+      if (c2 < 64) continue;
+      if (c2 > bestCode) { bestCode = c2; bestK = k2; }
+    }
+    if (bestK < 0) return {total: 0, items: [], hasMeal: false};
+
+    // 逐行回溯: dp[i][k] > dp[i-1][k] 才说明第 i-1 件被选了
+    var items = [], kk = bestK;
+    for (var i3 = n; i3 >= 1; i3--) {
+      var cur = dp[i3 * W + kk], prev = dp[(i3 - 1) * W + kk];
+      if (cur > prev) {
+        items.push(cands[i3 - 1]);
+        kk -= cands[i3 - 1][1];
+      }
+    }
+    return {total: bestK, items: items, hasMeal: true};
+  }
+
+  /* 带锚点的搭配: 锚点是用户主动选的, **必选**。
+     先预留它的价格, 剩余预算交给纯背包, 再拼回结果 ——
+     若把锚点只是 unshift 进候选, 背包会挑更便宜的主食把它跳过,
+     「我选它当主食」就落了空。 */
+  function knap(menu, limitFen, anchorItem) {
+    if (!anchorItem) return knapInner(menu, limitFen);
+    // ¥5 门槛和配料排除, 和 knapInner 保持一致 —— 曾漏了 <500 检查,
+    // 用户能锁定 ¥2 的联名饼干当"主食"
+    if (anchorItem.k === 2 || anchorItem.pf < 500 || anchorItem.pf > limitFen) {
+      return {total: 0, items: [], hasMeal: false};
+    }
+    // 只剔除**一份**锚点(同名同价): 实测全国有 511 条同名同价条目,
+    // 全删会让用户锚定圆筒时另一份圆筒消失, 少算一件
+    var rest = [], removed = false;
+    for (var i = 0; i < menu.length; i++) {
+      var m = menu[i];
+      if (!removed && m[0] === anchorItem.ni && m[1] === anchorItem.pf) {
+        removed = true;
+        continue;
+      }
+      rest.push(m);
+    }
+    var sub = knapInner(rest, limitFen - anchorItem.pf);
+    if (!sub.hasMeal && anchorItem.k !== 1) {
+      return {total: 0, items: [], hasMeal: false};   // 锚点是小食, 凑不出主食
+    }
+    // 锚点也转成 [名称下标, 价格, 分类], 和菜单项同构 ——
+    // 渲染端只认一种结构, 否则出现 undefined/¥NaN
+    return {total: anchorItem.pf + sub.total,
+            items: [[anchorItem.ni, anchorItem.pf, anchorItem.k]].concat(sub.items),
+            hasMeal: true};
   }
 
   function comboHTML(cityName, period, budgetFen) {
-    var r = comboLookup(cityName, period, budgetFen);
-    if (!r) {
-      return '<p class="bnote">这座城市没有可搭配的菜单数据。</p>';
+    var city = findCity(cityName);
+    if (!city) return '<p class="bnote">没有这座城市的菜单数据。</p>';
+    var menu = periodMenu(city, period);
+    if (!menu.length) return '<p class="bnote">这一档没有在售商品数据。</p>';
+
+    var anchorItem = null;
+    if (anchor && anchor.city === cityName && anchor.period === period) {
+      if (anchor.pf < 500) {
+        // ¥5 以下的单品不当一顿饭(和 knapInner 的门槛一致)。
+        // 旧版本页面曾允许锁定 ¥2 饼干, 搭配里还渲染出 undefined/¥NaN
+        anchor = null;
+        return '<p class="bnote">¥5 以下的单品不当一顿饭，已取消这个主食选择。</p>';
+      }
+      anchorItem = {ni: anchor.ni, pf: anchor.pf, k: anchor.k};
     }
-    if (r.gap) {
-      var ch = r.cheapest;
-      if (!ch) return '<p class="bnote">这一档没有可搭配的商品。</p>';
-      return '<p class="bgap">¥' + (budgetFen / 100).toFixed(2) + ' 在' + esc(period)
-        + '档吃不到一顿正经饭 —— 最便宜的一餐是 ' + esc(CN[ch[0]]) + ' '
-        + yuan(ch[1]) + '，还差 ' + yuan(ch[1] - budgetFen) + '。</p>';
+    var r = knap(menu, budgetFen, anchorItem);
+    var s = "";
+
+    if (anchorItem) {
+      s += '<p class="banchor">已锁定主食：<b>' + esc(MN[anchorItem.ni]) + '</b> '
+        + yuan(anchorItem.pf) + '<a href="javascript:void 0" id="bunlock">(换一件)</a></p>';
     }
-    var items = r.combo.i, s = "";
-    s += '<p class="bhead">¥' + (r.budget / 100).toFixed(0) + ' 能吃到 <b>'
-      + items.length + ' 件</b>，合计 ' + yuan(r.combo.t) + '</p>';
+
+    if (!r.hasMeal) {
+      // 从菜单里找最便宜的主食, 告诉用户还差多少
+      var cheap = null;
+      for (var i = 0; i < menu.length; i++) {
+        if (menu[i][2] === 1 && menu[i][1] >= 500) {
+          if (!cheap || menu[i][1] < cheap[1]) cheap = menu[i];
+        }
+      }
+      var gapTxt = cheap
+        ? '最便宜的一餐是 ' + esc(MN[cheap[0]]) + ' ' + yuan(cheap[1])
+          + '，还差 ' + yuan(cheap[1] - budgetFen)
+        : '这一档没有正餐可卖';
+      return s + '<p class="bgap">¥' + (budgetFen / 100).toFixed(2) + ' 在' + esc(period)
+        + '档吃不到一顿正经饭 —— ' + gapTxt + '。</p>';
+    }
+
+    s += '<p class="bhead">¥' + (budgetFen / 100).toFixed(0) + ' 能吃到 <b>'
+      + r.items.length + ' 件</b>，合计 ' + yuan(r.total) + '</p>';
     s += '<ul class="bcombo">';
-    for (var i = 0; i < items.length; i++) {
-      var nm = CN[items[i][0]], pf = items[i][1];
-      var isMeal = /堡|卷|饭|面|粥|组合|套餐|件套|随心配|分享餐|多人餐|双人餐|亲子餐|麦满分/
-        .test(nm);
-      s += '<li><span class="n"><span class="k ' + (isMeal ? "m" : "s") + '">'
-        + (isMeal ? "主食" : "小食") + '</span>' + esc(nm) + '</span>'
-        + '<span class="p">' + yuan(pf) + "</span></li>";
+    for (var j = 0; j < r.items.length; j++) {
+      // 统一按数组 [名称下标, 价格, 分类] 取值 —— 曾把锚点做成
+      // {ni,pf,k} 对象, 渲染时 it.ni 取不到, 整行变 undefined/¥NaN
+      var it = r.items[j];
+      s += '<li><span class="n"><span class="k ' + (it[2] === 1 ? "m" : "s") + '">'
+        + KIND_LABEL[it[2]] + '</span>' + esc(MN[it[0]]) + '</span>'
+        + '<span class="p">' + yuan(it[1]) + "</span></li>";
     }
     s += "</ul>";
-    var left = r.budget - r.combo.t;
-    s += '<p class="btot">一共 <b>' + yuan(r.combo.t) + '</b>，还剩 '
-      + yuan(left) + (left > 0 ? "（再添点别的也行）" : "（刚好花完）") + "。</p>";
-    if (r.cheapest) {
-      s += '<p class="btot">单买最便宜的一餐只要 ' + esc(CN[r.cheapest[0]]) + " "
-        + yuan(r.cheapest[1]) + "；多 " + yuan(r.combo.t - r.cheapest[1])
-        + " 就能多吃 " + (items.length - 1) + " 件。</p>";
+    var left = budgetFen - r.total;
+    s += '<p class="btot">一共 <b>' + yuan(r.total) + '</b>，还剩 ' + yuan(left)
+      + (left > 0 ? "（再添点别的也行）" : "（刚好花完）") + "。</p>";
+
+    // 和最便宜的单品正餐对比, 让"多花几块多几件"看得见
+    var cheapestMeal = null;
+    for (var i2 = 0; i2 < menu.length; i2++) {
+      if (menu[i2][2] === 1 && menu[i2][1] >= 500 &&
+          (!cheapestMeal || menu[i2][1] < cheapestMeal[1])) cheapestMeal = menu[i2];
     }
-    if (!r.exact) {
-      s += '<p class="bnote">你填的 ¥' + (budgetFen / 100).toFixed(2)
-        + " 不在预算档上，按就近的低档 ¥" + (r.budget / 100).toFixed(0)
-        + " 算；填高一点能看到更多件。</p>";
+    if (cheapestMeal && r.items.length > 1) {
+      s += '<p class="btot">单买最便宜的一餐只要 ' + esc(MN[cheapestMeal[0]]) + " "
+        + yuan(cheapestMeal[1]) + "；多 " + yuan(r.total - cheapestMeal[1])
+        + " 就能多吃 " + (r.items.length - 1) + " 件。</p>";
+    }
+    if (anchorItem && r.items.length === 1) {
+      s += '<p class="bnote">剩下的钱不够再添一件（小食最低 ¥5）。</p>';
     }
     return s;
   }
 
-  var budgetCity = null, budgetPeriod = null;
   function budgetBox(cityName, period) {
     var chips = "";
-    for (var i = 0; i < CBUD.length; i++) {
-      chips += '<button type="button" class="bchip" data-b="' + CBUD[i] + '">¥'
-        + (CBUD[i] / 100) + "</button>";
+    for (var i = 0; i < BUDGET_PRESETS.length; i++) {
+      chips += '<button type="button" class="bchip" data-b="' + BUDGET_PRESETS[i]
+        + '">¥' + (BUDGET_PRESETS[i] / 100) + "</button>";
     }
     return '<div class="budget" id="budgetBox">'
       + '<p class="bq">换个问法：我有 ¥__，这一档能吃到最饱的是什么？</p>'
       + '<div class="bchips" id="bchips">' + chips + "</div>"
       + '<div class="brow"><span class="blab">或自己填</span>'
-      + '<input class="bin" id="bin" type="number" min="5" max="200" step="1"'
+      + '<input class="bin" id="bin" type="number" min="5" max="100" step="1"'
       + ' inputmode="numeric" placeholder="20" aria-label="预算, 单位元">'
       + '<button type="button" class="bgo" id="bgo">看看</button></div>'
+      + '<p class="btip">想指定主食？到下方「这一档的全部在售」里点任一行的'
+      + '<b>当主食</b>，剩下的钱会自动配最多小食。</p>'
       + '<div class="bout" id="bout"></div></div>';
   }
+
+  var budgetCity = null, budgetPeriod = null;
   function bindBudget(cityName, period) {
     var box = document.getElementById("budgetBox");
     if (!box) return;
     var chips = box.querySelectorAll(".bchip"), inp = document.getElementById("bin"),
-      out = document.getElementById("bout"), last = null;
+      out = document.getElementById("bout");
+    budgetCity = cityName; budgetPeriod = period;
+
+    // 「(换一件)」解锁链接: #bout 每次重写都会生成新节点,
+    // 所以渲染完必须重新绑定 —— 曾在点过「当主食」后失效(点了没反应)
+    function bindUnlock(fen) {
+      var un = document.getElementById("bunlock");
+      if (un) un.onclick = function () {
+        anchor = null; show(fen); refreshMenuTable();
+      };
+    }
+
     function show(fen) {
-      last = fen;
       out.innerHTML = comboHTML(cityName, period, fen);
-      inp.value = (fen / 100).toFixed(0);      //  chips 与输入框保持同步
+      inp.value = (fen / 100).toFixed(0);
       for (var i = 0; i < chips.length; i++) {
         chips[i].classList.toggle("on", +chips[i].getAttribute("data-b") === fen);
       }
+      bindUnlock(fen);
     }
     for (var i = 0; i < chips.length; i++) {
       chips[i].onclick = (function (b) { return function () { show(b); }; })(
@@ -700,13 +893,137 @@ JS = """
     function go() {
       var v = parseFloat(inp.value);
       if (!v || v <= 0) { out.innerHTML = '<p class="bnote">先填个金额。</p>'; return; }
+      if (v * 100 > MAX_BUDGET_FEN) {
+        out.innerHTML = '<p class="bnote">预算封顶 ¥100 —— 再高就不是"省钱"问题了。</p>';
+        return;
+      }
       show(Math.round(v * 100));
     }
     document.getElementById("bgo").onclick = go;
     inp.onkeydown = function (e) { if (e.key === "Enter") go(); };
-    // 默认展示中间档, 一进来就有答案
-    var mid = CBUD[Math.min(2, CBUD.length - 1)];
-    if (mid) show(mid);
+    show(BUDGET_PRESETS[2]);            // 默认 ¥20, 打开就有答案
+  }
+
+  /* ---- 完整在售菜单表: 排序 + 过滤 + 「当主食」 ---- */
+  var mtSort = "price", mtFilter = "all";      // price | name ; all | meal | side
+
+  function menuRows(cityName, period) {
+    var city = findCity(cityName);
+    if (!city) return [];
+    var menu = periodMenu(city, period).slice();
+    if (mtFilter === "meal") menu = menu.filter(function (m) { return m[2] === 1; });
+    // 「只要小食」就是小食: 酱包/配料(kind 2)不算, 混进来会误导
+    else if (mtFilter === "side") menu = menu.filter(function (m) { return m[2] === 0; });
+    if (mtSort === "price") menu.sort(function (a, b) { return a[1] - b[1]; });
+    // 按中文习惯排(拼音序), 不是 UTF-16 码位序 —— 后者对用户是乱的
+    else menu.sort(function (a, b) {
+      return MN[a[0]].localeCompare(MN[b[0]], "zh");
+    });
+    return menu;
+  }
+
+  function menuTable(cityName, period) {
+    var city = findCity(cityName), n = 0;
+    if (city) n = periodMenu(city, period).length;
+    if (!n) return "";
+    var probeNote = (city && city.probe)
+      ? '<p class="mtnote">这一城只采到 12 个采样商品（候选门店均不支持预约取餐），'
+        + '菜单不完整，价格仅供参考。</p>' : "";
+    return '<div class="mtwrap" id="mtwrap">'
+      + '<div class="mthead"><p class="big" style="margin:0">这一档的全部在售'
+      + '（' + n + ' 件，麦当劳订餐接口实价）</p>'
+      + '<div class="mtctl">'
+      + '<button type="button" class="mtbtn" data-f="all">全部</button>'
+      + '<button type="button" class="mtbtn" data-f="meal">只要主食</button>'
+      + '<button type="button" class="mtbtn" data-f="side">只要小食</button>'
+      + '<button type="button" class="mtbtn mtsort" data-s="price">价格 ↑</button>'
+      + '<button type="button" class="mtbtn mtsort" data-s="name">名称</button>'
+      + "</div></div>" + probeNote
+      + '<div class="mtscroll"><table class="mt"><thead><tr>'
+      + '<th>商品</th><th>分类</th><th>价格</th><th></th>'
+      // 单引号包裹, 别用 \" —— Python 普通字符串会把 \" 吃成 ",
+      // JS 字符串当场截断, 整个页面脚本语法错误(菜单表曾因此全站挂掉)
+      + '</tr></thead><tbody id="mtbody"></tbody></table></div></div>';
+  }
+
+  function refreshMenuTable() {
+    var body = document.getElementById("mtbody");
+    if (!body || !budgetCity) return;
+    var rows = menuRows(budgetCity, budgetPeriod), s = "";
+    for (var i = 0; i < rows.length; i++) {
+      var m = rows[i];
+      var isAnchor = anchor && anchor.city === budgetCity
+        && anchor.period === budgetPeriod && anchor.ni === m[0] && anchor.pf === m[1];
+      s += '<tr class="' + (isAnchor ? "on" : "") + '">'
+        + '<td class="n">' + esc(MN[m[0]]) + "</td>"
+        + '<td><span class="k ' + (m[2] === 1 ? "m" : (m[2] === 2 ? "x" : "s")) + '">'
+        + KIND_LABEL[m[2]] + "</span></td>"
+        + '<td class="p">' + yuan(m[1]) + "</td>"
+        // ¥5 以下的单品不当一顿饭, 不让选成主食(和背包的门槛一致)
+        + '<td class="a"><button type="button" class="mtpick" data-ni="' + m[0]
+        + '" data-pf="' + m[1] + '" data-k="' + m[2] + '"'
+        + (m[1] < 500 ? ' disabled title="¥5 以下的单品不当一顿饭"' : "")
+        + ">" + (isAnchor ? "已选" : "当主食") + "</button></td></tr>";
+    }
+    body.innerHTML = s;
+    var btns = body.querySelectorAll(".mtpick");
+    for (var j = 0; j < btns.length; j++) {
+      btns[j].onclick = (function (b) {
+        return function () {
+          var ni = +b.getAttribute("data-ni"), pf = +b.getAttribute("data-pf"),
+            k = +b.getAttribute("data-k");
+          if (anchor && anchor.ni === ni && anchor.pf === pf) {
+            anchor = null;                      // 再点一次取消
+          } else {
+            anchor = {city: budgetCity, period: budgetPeriod, ni: ni, pf: pf, k: k};
+          }
+          // 搭配器与菜单表联动刷新
+          var out = document.getElementById("bout");
+          var inp = document.getElementById("bin");
+          var fen = 2000;
+          if (inp && inp.value) fen = Math.round(parseFloat(inp.value) * 100);
+          if (!fen || fen <= 0) fen = 2000;
+          if (out) {
+            out.innerHTML = comboHTML(budgetCity, budgetPeriod, fen);
+            // #bout 被重写, 「(换一件)」是新节点, 要重新绑定
+            var un2 = document.getElementById("bunlock");
+            if (un2) un2.onclick = function () {
+              anchor = null;
+              out.innerHTML = comboHTML(budgetCity, budgetPeriod, fen);
+              refreshMenuTable();
+            };
+          }
+          refreshMenuTable();
+        };
+      })(btns[j]);
+    }
+    // 控件高亮
+    var fbs = document.querySelectorAll("#mtwrap .mtbtn[data-f]");
+    for (var q = 0; q < fbs.length; q++) {
+      fbs[q].classList.toggle("on", fbs[q].getAttribute("data-f") === mtFilter);
+    }
+    var sbs = document.querySelectorAll("#mtwrap .mtbtn[data-s]");
+    for (var r = 0; r < sbs.length; r++) {
+      sbs[r].classList.toggle("on", sbs[r].getAttribute("data-s") === mtSort);
+    }
+  }
+
+  function bindMenuTable(cityName, period) {
+    var wrap = document.getElementById("mtwrap");
+    if (!wrap) return;
+    refreshMenuTable();
+    var fbs = wrap.querySelectorAll(".mtbtn[data-f]");
+    for (var i = 0; i < fbs.length; i++) {
+      fbs[i].onclick = (function (b) {
+        return function () { mtFilter = b.getAttribute("data-f"); refreshMenuTable(); };
+      })(fbs[i]);
+    }
+    var sbs = wrap.querySelectorAll(".mtbtn[data-s]");
+    for (var j = 0; j < sbs.length; j++) {
+      sbs[j].onclick = (function (b) {
+        return function () { mtSort = b.getAttribute("data-s"); refreshMenuTable(); };
+      })(sbs[j]);
+    }
   }
 
   /* ---- 把当前城市与时刻写进地址栏, 方便复制分享 ---- */
@@ -772,22 +1089,47 @@ def to_min(t: str) -> int:
         return 0
 
 
+KIND_CODE = {"side": 0, "meal": 1, "extra": 2}
+
+# 全国商品名表 —— 实测全国只有 269 个唯一商品名,
+# 所以完整菜单(14.4 万个「城×档×商品」三元组)用名称下标编码只要 1.8MB,
+# 比"只嵌 top5 + 预计算搭配"的方案还小, 却换来完整菜单浏览 + 主动选主餐。
+MENU_NAMES: list[str] = []
+MENU_NAME_IDX: dict[str, int] = {}
+
+
+def menu_name(nm: str) -> int:
+    if nm not in MENU_NAME_IDX:
+        MENU_NAME_IDX[nm] = len(MENU_NAMES)
+        MENU_NAMES.append(nm)
+    return MENU_NAME_IDX[nm]
+
+
 def build_city(c: dict) -> dict:
     """原始采集结果 -> 页面需要的精简结构(控制体积)。"""
     periods = []
+    basket = {i["code"]: i for i in (c.get("basket") or [])}
+    pu = c.get("prices", {}).get("pickup") or {}
     for p in c.get("periods") or []:
         f = (c.get("floors", {}).get("pickup") or {}).get(p["name"]) or {}
         meal, any_ = f.get("meal"), f.get("any")
+        # 完整在售菜单: [名称下标, 价格(分), 分类码], 按价格升序
+        menu: list[list[int]] = []
+        for code, it in basket.items():
+            price = (pu.get(code) or {}).get(p["name"])
+            if not isinstance(price, int):
+                continue
+            menu.append([menu_name(it.get("name") or code), price,
+                         KIND_CODE.get(it.get("kind"), 0)])
+        menu.sort(key=lambda x: x[1])
         periods.append({
             "name": p["name"], "start": p["start"], "end": p["end"],
             "meal": {"n": meal["name"], "p": meal["price"]} if meal else None,
             "any": {"n": any_["name"], "p": any_["price"]} if any_ else None,
-            "top": [{"n": r["name"], "p": r["price"], "k": r["kind"]}
-                    for r in (f.get("top") or [])],
+            "menu": menu,
         })
     # 得来速更便宜的(同商品同档对比)
     dt_cheaper: list[dict] = []
-    pu = c.get("prices", {}).get("pickup") or {}
     dt = c.get("prices", {}).get("dt") or {}
     if dt:
         for p in c.get("periods") or []:
@@ -815,6 +1157,8 @@ def build_city(c: dict) -> dict:
         "biz": [store.get("businessStart") or "07:00", store.get("businessEnd") or "22:00"],
         "periods": periods,
         "dtCheaper": dt_cheaper,
+        # 探针城只有 12 个采样商品, 菜单不完整 —— 页面要如实说
+        "probe": not c.get("fullMenu", False),
     }
 
 
@@ -956,21 +1300,13 @@ def main() -> int:
 
     data = [build_city(c) for c in cities_raw]
 
-    # 「预算内怎么点最饱」的全国搭配表 —— 服务端预算阶梯预计算,
-    # 用全局商品名表压缩到 ~0.5MB。全量菜单有 5.6MB, 塞进页面不现实。
-    combos = {}
-    combo_path = ROOT / "data" / "combos.json"
-    if combo_path.exists():
-        cb = json.loads(combo_path.read_text(encoding="utf-8"))
-        combos = {"names": cb.get("names") or [],
-                  "budgets": cb.get("budgets") or [],
-                  "cities": cb.get("cities") or {}}
-
+    # 完整菜单直接嵌页面(全国 269 个唯一商品名, 名称下标编码 1.8MB),
+    # 不再用「预算阶梯预计算」——那样反而要多 0.5MB, 还限制了自由金额与选主食。
     payload = json.dumps({
         "cities": data,
         "hot": [c for c in HOT_CITIES if any(x["city"] == c for x in data)],
         "targetDate": surface.get("targetDate", ""),
-        "combos": combos,
+        "mn": MENU_NAMES,
     }, ensure_ascii=False, separators=(",", ":"))
 
     n_cities = len(cities_raw)
@@ -986,9 +1322,10 @@ def main() -> int:
     fb_p = next((p for p in fb["periods"] if p["meal"]), fb["periods"][0] if fb["periods"] else None)
     fallback = ""
     if fb_p and fb_p.get("meal"):
-        rows = "".join(f'<li><span class="n">{escape(r["n"])}</span>'
-                       f'<span class="p">¥{r["p"] / 100:.2f}</span></li>'
-                       for r in fb_p["top"][:6])
+        rows = "".join(f'<li><span class="n">'
+                       f'{escape(MENU_NAMES[r[0]])}</span>'
+                       f'<span class="p">¥{r[1] / 100:.2f}</span></li>'
+                       for r in fb_p["menu"][:6])
         fallback = (
             f'<div class="card"><p class="sub" style="margin-bottom:10px">'
             f'{escape(fb["city"])} · {escape(fb["store"]["name"])}</p>'
@@ -1099,7 +1436,52 @@ def main() -> int:
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(html, encoding="utf-8")
     print(f"已生成 {OUT_PATH} ({OUT_PATH.stat().st_size // 1024} KB, {n_cities} 城, 双击即开)")
-    return 0
+    return check_inline_js(OUT_PATH)
+
+
+NODE = "C:/Users/xueyihan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
+
+# 产物自检: 页面里任何一段内联脚本语法错误, 整站就白屏 —— 而且
+# 从 HTML 源码肉眼看不出来(Python 字符串把 \" 吃成 " 就会这样)。
+# 所以渲染完必须用 node 逐块 new Function 校验, 有问题就让构建失败。
+JS_CHECK = r"""
+const fs = require('fs');
+const html = fs.readFileSync(process.argv[2], 'utf8');
+const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+let bad = 0;
+blocks.forEach((s, i) => {
+  try { new Function(s); }
+  catch (e) { bad++; console.log('内联脚本块 ' + i + ' 语法错误: ' + e.message); }
+});
+process.exit(bad ? 1 : 0);
+"""
+
+
+def check_inline_js(path: Path) -> int:
+    import subprocess
+    import tempfile
+
+    if not Path(NODE).exists():
+        print("警告: 找不到 node, 跳过内联脚本语法自检")
+        return 0
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False,
+                                     encoding="utf-8") as f:
+        f.write(JS_CHECK)
+        probe = f.name
+    try:
+        r = subprocess.run([NODE, probe, str(path)], capture_output=True,
+                           text=True, timeout=60)
+        if r.returncode != 0:
+            print(r.stdout.strip())
+            print("自检失败: 页面脚本有语法错误, 这次渲染不可用")
+            return 1
+        print("内联脚本语法自检通过")
+        return 0
+    except subprocess.TimeoutExpired:
+        print("警告: 语法自检超时, 跳过")
+        return 0
+    finally:
+        Path(probe).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

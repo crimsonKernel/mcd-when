@@ -273,46 +273,79 @@ class TestCombo(unittest.TestCase):
         self.assertEqual([c["name"] for c in cands], ["堡"])
 
 
-class TestComboBlob(unittest.TestCase):
-    """data/combos.json 的结构完整性(前端直接消费这份数据)。"""
+class TestComboAnchor(unittest.TestCase):
+    """「我选它当主食」—— 锚点必选语义。
 
-    @classmethod
-    def setUpClass(cls):
-        cls.blob = load("data/combos.json")
+    锚点是用户主动选的, 必须出现在结果里; 若只是 unshift 进候选,
+    背包会挑更便宜的主食把它跳过, 「我选它当主食」就落了空。
+    """
 
-    def test_shape(self):
-        self.assertIn("names", self.blob)
-        self.assertIn("budgets", self.blob)
-        self.assertIn("cities", self.blob)
-        self.assertEqual(self.blob["budgets"],
-                         [1000, 1500, 2000, 2500, 3000, 4000, 5000])
+    def setUp(self):
+        from combo import best_combo
+        self.best_combo = best_combo
 
-    def test_every_city_has_periods(self):
-        self.assertGreater(len(self.blob["cities"]), 300)
-        for city, per in self.blob["cities"].items():
-            self.assertTrue(per, f"{city} 没有任何时段")
-            for pname, e in per.items():
-                self.assertIn("best", e)
-                self.assertIn("b", e)
+    ITEMS = [
+        {"name": "巨无霸", "kind": "meal", "price_fen": 1390},
+        {"name": "双层堡", "kind": "meal", "price_fen": 1250},
+        {"name": "圆筒", "kind": "side", "price_fen": 500},
+        {"name": "薯条", "kind": "side", "price_fen": 850},
+        {"name": "酱包", "kind": "extra", "price_fen": 300},
+    ]
 
-    def test_name_indices_all_valid(self):
-        n = len(self.blob["names"])
-        for city, per in self.blob["cities"].items():
-            for pname, e in per.items():
-                self.assertLess(e["best"][0], n, f"{city}/{pname} best 越界")
-                for _b, lad in e["b"].items():
-                    for pair in lad["i"]:
-                        self.assertLess(pair[0], n, f"{city}/{pname} 名称下标越界")
+    def test_anchor_is_not_skipped(self):
+        # ¥30 锚定 ¥13.9 的巨无霸: 即便有更便宜的 ¥12.5 主食, 也必须选巨无霸
+        anchor = {"name": "巨无霸", "kind": "meal", "price_fen": 1390}
+        total, picked, ok = self.best_combo(self.ITEMS, 3000, anchor)
+        self.assertTrue(ok)
+        self.assertIn(anchor, picked)
+        # 剩下 ¥16.1: 「筒+薯条」2 件但没有主食, 按硬约束不成立;
+        # 所以是 巨无霸 + 双层堡, 不是把锚点跳过换成更便宜的主食
+        self.assertEqual(total, 1390 + 1250)
+        self.assertEqual(len(picked), 2)
 
-    def test_no_combo_exceeds_its_budget(self):
-        for city, per in self.blob["cities"].items():
-            for pname, e in per.items():
-                for b, lad in e["b"].items():
-                    self.assertLessEqual(lad["t"], int(b),
-                                         f"{city}/{pname}/¥{b} 超预算")
+    def test_anchor_extra_rejected(self):
+        # 酱包是配料, 不能当一顿饭的锚
+        total, picked, ok = self.best_combo(
+            self.ITEMS, 3000, {"name": "酱包", "kind": "extra", "price_fen": 300})
+        self.assertFalse(ok)
+        self.assertEqual(picked, [])
 
-    def test_every_combo_has_at_least_one_item(self):
-        for city, per in self.blob["cities"].items():
-            for pname, e in per.items():
-                for b, lad in e["b"].items():
-                    self.assertTrue(lad["i"], f"{city}/{pname}/¥{b} 空搭配")
+    def test_anchor_over_budget_rejected(self):
+        anchor = {"name": "巨无霸", "kind": "meal", "price_fen": 1390}
+        total, _, ok = self.best_combo(self.ITEMS, 1000, anchor)
+        self.assertFalse(ok)
+
+    def test_anchor_below_floor_rejected(self):
+        # ¥2 的联名饼干不能当一顿饭的锚(页面端曾允许, 搭配里渲染出
+        # undefined/¥NaN; 门槛必须和 candidates() 一致)
+        anchor = {"name": "饼干", "kind": "side", "price_fen": 200}
+        total, picked, ok = self.best_combo(self.ITEMS, 3000, anchor)
+        self.assertFalse(ok)
+        self.assertEqual(picked, [])
+
+    def test_side_anchor_without_affordable_meal(self):
+        # 锚是小食, 剩下的钱凑不出任何主食 -> 判"吃不到一顿正经饭"
+        anchor = {"name": "圆筒", "kind": "side", "price_fen": 500}
+        total, picked, ok = self.best_combo(self.ITEMS, 900, anchor)
+        self.assertFalse(ok)
+        self.assertEqual(picked, [])
+
+    def test_side_anchor_with_meal_fills_rest(self):
+        # ¥20 锚定 ¥5 圆筒: 剩下 ¥15 够买一件主食, 成立
+        anchor = {"name": "圆筒", "kind": "side", "price_fen": 500}
+        total, picked, ok = self.best_combo(self.ITEMS, 2000, anchor)
+        self.assertTrue(ok)
+        self.assertIn(anchor, picked)
+        names = [x["name"] for x in picked]
+        self.assertIn("双层堡", names)                 # ¥15 内最便宜的主食
+        self.assertEqual(total, 500 + 1250)
+
+    def test_anchor_removes_only_one_copy(self):
+        # 两份同名同价商品, 锚掉一份, 另一份仍可被背包选中
+        items = self.ITEMS + [{"name": "圆筒", "kind": "side", "price_fen": 500}]
+        anchor = {"name": "圆筒", "kind": "side", "price_fen": 500}
+        total, picked, ok = self.best_combo(items, 3500, anchor)
+        self.assertTrue(ok)
+        self.assertEqual(sum(1 for x in picked if x["name"] == "圆筒"), 2)
+        # 4 件且总价更低者胜: 双层堡(1250) 比 巨无霸(1390) 便宜, 同样 4 件选它
+        self.assertEqual(total, 500 + 1250 + 850 + 500)

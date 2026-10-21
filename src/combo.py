@@ -2,11 +2,12 @@
 
 被两处共用:
   - src/mcp_server.py      的 combo_under_budget 工具(MCP 形态)
-  - src/combo_precompute.py 的全国预计算(静态页形态)
+  - src/render_report.py   内嵌进页面的同款 JS(网页形态, knap/knapInner)
 
 抽成模块是为了让「同一个算法」有唯一实现: 网页上看到的搭配,
 和 MCP 客户端问出来的搭配, 必须逐分不差。否则同一个问题两个答案,
-产品立刻就失信了。
+产品立刻就失信了。src/parity_combo.py 会把页面里的 JS 抠出来
+和本模块逐分对拍(207 个用例), 守住这条线。
 
 核心思路(与 mcp_server.py 原有实现完全一致):
   0/1 背包求件数最多, 但目标函数不是单纯件数 ——
@@ -67,8 +68,13 @@ def candidates(city_record: dict, period: str | None = None) -> list[dict]:
     return cands
 
 
-def best_combo(cands: list[dict], limit_fen: int) -> tuple[int, list[dict], bool]:
+def best_combo(cands: list[dict], limit_fen: int,
+               anchor: dict | None = None) -> tuple[int, list[dict], bool]:
     """0/1 背包: 预算内「最像一顿饭」的搭配。
+
+    anchor 是「用户主动选定的主食/小食」——**必选, 不是可选**:
+      先预留它的价格, 剩余预算再跑背包, 最后把它拼回结果。
+      否则背包会挑更便宜的主食把它跳过, 「我选它当主食」就落了空。
 
     「有主食」是硬约束, 不是排序键:
       预算里装不下任何主食时, 宁可返回空, 也不返回「两个冰淇淋凑 ¥10」。
@@ -79,17 +85,40 @@ def best_combo(cands: list[dict], limit_fen: int) -> tuple[int, list[dict], bool
 
     返回 (实际花费分, 商品列表, 是否含主食)。无可行解时返回 (0, [], False)。
     """
-    if limit_fen <= 0 or not cands:
-        return 0, [], False
-
     # 防御性过滤: 正常由 candidates() 先筛过, 但直接调本函数时
     # 不该把酱包/配件算进"一顿饭"
     cands = [x for x in cands if x.get("kind") in MEAL_KINDS]
+    if limit_fen <= 0:
+        return 0, [], False
+
+    if anchor is not None:
+        if anchor.get("kind") not in MEAL_KINDS:
+            return 0, [], False
+        # ¥5 以下的单品不当一顿饭, 和 candidates() 的门槛一致 ——
+        # 页面端曾允许锁定 ¥2 联名饼干当主食, 两边必须同时拒绝
+        if anchor["price_fen"] < MIN_ITEM_FEN:
+            return 0, [], False
+        if anchor["price_fen"] > limit_fen:
+            return 0, [], False
+        # 锚点必选: 从候选里剔除**一份**同名同价的, 剩余预算交给背包。
+        # 只删一份 —— 实测全国有 511 条同名同价条目(同一商品两个 code),
+        # 全删会让用户锚定圆筒时, 另一份圆筒平白消失, 少算一件。
+        rest = list(cands)
+        for i, x in enumerate(rest):
+            if x.get("name") == anchor.get("name") \
+                    and x.get("price_fen") == anchor.get("price_fen"):
+                rest.pop(i)
+                break
+        sub_total, sub_picked, sub_ok = best_combo(rest, limit_fen - anchor["price_fen"])
+        if not (sub_ok or anchor.get("kind") == "meal"):
+            # 锚点是小食, 剩下的钱又凑不出任何主食
+            return 0, [], False
+        return anchor["price_fen"] + sub_total, [anchor] + sub_picked, True
+
     if not cands:
         return 0, [], False
 
     cands = sorted(cands, key=lambda x: x["price_fen"])
-    n = len(cands)
     NEG = (-1, -1)
     dp = [NEG] * (limit_fen + 1)
     pick: list[list[int]] = [[] for _ in range(limit_fen + 1)]
