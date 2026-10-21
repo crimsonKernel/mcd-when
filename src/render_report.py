@@ -79,6 +79,7 @@ a{color:#8C2F0B}
 .field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:132px;max-width:240px}
 .field .flab{font-size:12.5px;color:#8A7361;font-weight:700;letter-spacing:.3px}
 .selrow{display:flex;gap:12px;flex-wrap:wrap}
+.qhint{margin:9px 0 0;font-size:12.5px;color:#9C8873;letter-spacing:.2px}
 select.sel{font:inherit;font-size:16px;padding:11px 12px;border:1px solid #E4D5BE;
  border-radius:12px;background:#fff;color:#1f2329;width:100%;
  appearance:none;-webkit-appearance:none;
@@ -220,6 +221,7 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   .qrow{border-bottom-color:#3a3326}
   .qlab{color:#F0E7DB}
   .field .flab{color:#B9A68E}
+  .qhint{color:#9A8672}
   select.sel,select#times{background-color:#22262E;border-color:#4A412F;color:#e7eaf0}
   select.sel:disabled{background-color:#1c1f24;color:#6d7684}
   select.sel option{background:#22262E;color:#e7eaf0}
@@ -793,6 +795,7 @@ def main() -> int:
         <select class="sel" id="citySel"></select>
       </div>
     </div>
+    <p class="qhint">没找到你的城市？往下翻到最后一段「城市名单」。</p>
     <div id="suggest"></div>
   </div>
   <div class="qrow">
@@ -815,7 +818,7 @@ def main() -> int:
 <details><summary>看看全国：哪里早餐开得早、哪里午餐最便宜</summary>
 <div class="dbody">{overview}</div></details>
 
-<details><summary>全国 {n_cities} 座城市名单（没搜到你的城市就来这里翻）</summary>
+<details><summary>全国 {n_cities} 座城市名单</summary>
 <div class="dbody">{citylist}</div></details>
 
 <details><summary>这些数字是怎么来的？</summary><div class="dbody">
