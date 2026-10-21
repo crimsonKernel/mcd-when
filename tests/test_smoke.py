@@ -38,6 +38,58 @@ class TestClassify(unittest.TestCase):
         self.assertGreaterEqual(MIN_FOOD_PRICE, 500)
 
 
+class TestBatchPrice(unittest.TestCase):
+    """回归: calculate-price 的 productList[].subtotal 是【行小计】= 单价 × quantity。
+
+    同一商品码在菜单里挂在多个分类下时, 不去重就会被 API 合并成 quantity=2,
+    小计翻倍 —— 曾经导致 188 城的"全菜单价格"整体虚高一倍。
+    """
+
+    def _fake_client(self, responses):
+        class Fake:
+            def __init__(self):
+                self.calls = []
+
+            def call_tool(self, name, args):
+                self.calls.append(args)
+                # 模拟 API: 相同商品码合并, quantity 累加, subtotal = 单价 × quantity
+                merged = {}
+                for it in args["items"]:
+                    c = it["productCode"]
+                    q = it.get("quantity", 1)
+                    if c in merged:
+                        merged[c] += q
+                    else:
+                        merged[c] = q
+                unit = {"A": 990, "B": 1850}
+                product_list = [
+                    {"productCode": c, "productName": c,
+                     "quantity": q, "originalSubtotal": unit[c] * q,
+                     "subtotal": unit[c] * q}
+                    for c, q in merged.items()
+                ]
+                return {"success": True, "data": {"productList": product_list}}
+        return Fake()
+
+    def test_subtotal_is_divided_by_quantity(self):
+        import survey_batch
+        fake = self._fake_client(None)
+        counter = [0]
+        out = survey_batch.batch_price(fake, "store", None, 1,
+                                       ["A", "A", "B"], "2026-10-22 08:00", counter)
+        # A 被传了两次 -> API 返回 quantity=2 / subtotal=1980 -> 必须归一回 990
+        self.assertEqual(out["A"]["price"], 990)
+        self.assertEqual(out["B"]["price"], 1850)
+
+    def test_menu_codes_are_deduplicated(self):
+        # 菜单解析必须去重(见 survey_batch.py 的 seen 集合)
+        import inspect
+        import survey_batch
+        src = inspect.getsource(survey_batch)
+        self.assertEqual(src.count("seen.add"), 2,
+                         "两处菜单收集点都必须去重")
+
+
 class TestDataFiles(unittest.TestCase):
     def test_national_surface_has_cities(self):
         d = load("data/surface_national.json")

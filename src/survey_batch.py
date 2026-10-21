@@ -101,9 +101,14 @@ def batch_price(client: McdMcpClient, store_code: str, be_code: str | None,
         if r is not None:
             for item in (r.get("data") or {}).get("productList") or []:
                 if item.get("productCode") and item.get("subtotal") is not None:
+                    # subtotal 是【该行的小计】= 单价 × quantity。万一 items 里
+                    # 混进重复商品码, API 会合并成 quantity=N, 小计就翻 N 倍。
+                    # 所以按 quantity 归一, 拿到的永远是单价。
+                    qty = item.get("quantity") or 1
+                    unit = round(item["subtotal"] / qty)
                     out[item["productCode"]] = {
                         "name": item.get("productName") or item["productCode"],
-                        "price": item["subtotal"],
+                        "price": unit,
                     }
             return
         if len(codes) == 1:
@@ -151,9 +156,13 @@ def survey_city(client: McdMcpClient, probe: dict[str, Any], target_date: str,
             chosen, periods = cand, per
             cats = (r.get("data") or {}).get("categories") or []
             codes, names = [], []
+            seen = set()
             for cat in cats:
                 for m in cat.get("meals") or []:
-                    if m.get("code"):
+                    # 同一个商品会同时挂在多个分类下(如「早餐卡专享价」+「超值早餐」)。
+                    # 不去重就会被 API 合并成 quantity=2, 小计翻倍 —— 价格全错。
+                    if m.get("code") and m["code"] not in seen:
+                        seen.add(m["code"])
                         codes.append(m["code"])
                         names.append(cat.get("name") or "")
             first_menu = (per[0]["name"], codes, names)
@@ -197,9 +206,11 @@ def survey_city(client: McdMcpClient, probe: dict[str, Any], target_date: str,
         if r.get("success"):
             cats = (r.get("data") or {}).get("categories") or []
             codes, cmap = [], {}
+            seen = set()
             for cat in cats:
                 for m in cat.get("meals") or []:
-                    if m.get("code"):
+                    if m.get("code") and m["code"] not in seen:
+                        seen.add(m["code"])
                         codes.append(m["code"])
                         cmap[m["code"]] = cat.get("name") or ""
             period_codes[p["name"]] = codes
@@ -327,8 +338,10 @@ def main() -> int:
     ap.add_argument("--city", action="append")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--workers", type=int, default=8)
-    ap.add_argument("--no-dt", action="store_true")
-    ap.add_argument("--resume", action="store_true")
+    ap.add_argument("--no-dt", action="store_true", help="不采得来速渠道")
+    ap.add_argument("--resume", action="store_true", help="只补没采过的城市")
+    ap.add_argument("--force", action="store_true",
+                    help="忽略已有结果重采全部城市(用于采集逻辑修 bug 后重跑)")
     args = ap.parse_args()
 
     load_env()
@@ -344,7 +357,7 @@ def main() -> int:
     ok_cities = [c for c in probe["cities"] if c.get("ok") and c.get("store", {}).get("code")]
     if args.city:
         ok_cities = [c for c in ok_cities if c["city"] in args.city]
-    if args.resume and OUT_PATH.exists():
+    if args.resume and OUT_PATH.exists() and not args.force:
         done = {c["city"] for c in json.loads(OUT_PATH.read_text(encoding="utf-8"))["cities"]}
         ok_cities = [c for c in ok_cities if c["city"] not in done]
         print(f"断点续跑: 已完成 {len(done)} 座, 还剩 {len(ok_cities)} 座")
