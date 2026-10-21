@@ -1,7 +1,7 @@
 # 宣发文案集 · 麦当劳几点最便宜 (mcd-when)
 
-> 四平台版本, 均基于全国 388 城真机实测数据。仓库地址、配图(images/heatmap.png)、
-> 在线报告链接在发布时替换占位符 `{{REPO_URL}}` / `https://mcd-when.app.workbuddy.host/`。
+> 四平台版本, 均基于全国 388 城真机实测数据。配图用 images/heatmap.png。
+> 下面已填的是当前在线报告地址; 仓库建好后把「仓库」一栏换成 GitHub 仓库地址即可。
 > 注意: 所有数字都来自 calculate-price 实测, 不要夸大, 不要编造新结论。
 
 ---
@@ -39,7 +39,7 @@
 
 纯 Python 标准库, 零第三方依赖, 全链路只读(写操作白名单硬隔离, 跑一万次也不会下一单)。
 
-仓库: {{REPO_URL}}
+仓库: https://mcd-when.app.workbuddy.host/
 在线查你自己的城市: https://mcd-when.app.workbuddy.host/
 
 ---
@@ -86,7 +86,7 @@
 别人参加麦当劳大赛都在做「怎么凑单最便宜」,
 我做的是「几点去能买到什么」——而且跑了全国 388 座城市。
 发现一个反常识: 不是全国统一早餐最便宜, 有 20 座城市是午餐最便宜。
-{{REPO_URL}}
+https://mcd-when.app.workbuddy.host/
 
 ---
 
@@ -97,7 +97,7 @@
 还有 7 点开门但 7:14 前啥也点不了, 重庆甚至要 8:14 才能买早餐。
 
 想知道咱们这儿几点最便宜: https://mcd-when.app.workbuddy.host/
-觉得有意思的话帮忙去 GitHub 点个 Star: {{REPO_URL}}
+觉得有意思的话帮忙去 GitHub 点个 Star: https://mcd-when.app.workbuddy.host/
 在参加比赛, 前 100 名有汉堡回车键周边, 拜托了🙏
 
 ---

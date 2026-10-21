@@ -17,26 +17,32 @@ a{color:#1D4F91}
 .lead{font-size:16px;color:#3d4450;margin:0 0 16px}
 .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 .sub{color:#6b7280;font-size:14px;margin:0}
-.card{background:#fff;border:1px solid #e3e6ec;border-radius:14px;padding:18px;margin:0 0 14px}
+.card{background:#fff;border:1px solid #e3e6ec;border-radius:16px;padding:18px;margin:0 0 14px;
+ box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
 
 /* —— 提问区 —— */
-.q{background:#fff;border:1px solid #e3e6ec;border-radius:14px;padding:16px 18px;margin:0 0 14px}
+.q{background:#fff;border:1px solid #e3e6ec;border-radius:16px;padding:16px 18px;margin:0 0 14px;
+ box-shadow:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.05)}
 .qrow{margin:0 0 12px}
 .qrow:last-child{margin-bottom:0}
 .qlab{font-size:14px;color:#6b7280;font-weight:700;display:block;margin:0 0 7px}
-input.search{font:inherit;font-size:16px;padding:9px 12px;border:1px solid #d7dbe3;
- border-radius:10px;background:#fff;color:#1f2329;width:100%;max-width:320px}
+.selrow{display:flex;gap:10px;flex-wrap:wrap}
+select.sel{font:inherit;font-size:16px;padding:9px 12px;border:1px solid #d7dbe3;
+ border-radius:10px;background:#fff;color:#1f2329;flex:1;min-width:130px;max-width:220px}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 0}
 .chip{display:inline-block;padding:6px 13px;border:1px solid #d7dbe3;border-radius:20px;
- background:#fff;color:#1f2329;font-size:14.5px;cursor:pointer;line-height:1.5}
+ background:#fff;color:#1f2329;font-size:14.5px;cursor:pointer;line-height:1.5;
+ transition:border-color .15s,color .15s,background .15s,transform .15s}
 .chip:hover{border-color:#1D4F91;color:#1D4F91}
-.chip.on{background:#1D4F91;border-color:#1D4F91;color:#fff;font-weight:700}
+.chip.on{background:#1D4F91;border-color:#1D4F91;color:#fff;font-weight:700;transform:scale(1.05)}
 .hintline{font-size:13.5px;color:#6b7280;margin:8px 0 0}
 select{font:inherit;font-size:16px;padding:8px 12px;border:1px solid #d7dbe3;border-radius:10px;
- background:#fff;color:#1f2329;max-width:100%}
+ background:#fff;color:#1f2329;max-width:100%;transition:border-color .15s}
+select:focus{border-color:#1D4F91;outline:2px solid rgba(29,79,145,.18)}
 button.now{font:inherit;font-size:15px;padding:8px 16px;border:1px solid #d7dbe3;
- border-radius:10px;background:#f0f2f5;color:#1f2329;cursor:pointer}
-button.now:hover{border-color:#1D4F91;color:#1D4F91}
+ border-radius:10px;background:#f0f2f5;color:#1f2329;cursor:pointer;
+ transition:border-color .15s,color .15s,background .15s}
+button.now:hover{border-color:#1D4F91;color:#1D4F91;background:#eef3fa}
 
 /* —— 答案区 —— */
 .state{font-size:15px;font-weight:700;padding:10px 14px;border-radius:10px;margin:0 0 14px}
@@ -44,12 +50,30 @@ button.now:hover{border-color:#1D4F91;color:#1D4F91}
 .state.gap{background:#fff4ce;color:#8a6100;border:1px solid #f0d999}
 .state.closed{background:#f1f2f5;color:#5b6472;border:1px solid #dfe2e8}
 .big{font-size:14.5px;color:#6b7280;margin:0 0 2px}
-.ansprice{font-size:44px;font-weight:800;letter-spacing:-1.5px;line-height:1.15;margin:0;
+.anshero{background:linear-gradient(135deg,#edf7f0,#f8fcf7);border:1px solid #c9e8d4;
+ border-radius:14px;padding:14px 16px 12px;margin:2px 0 12px}
+.anshero .ansname{margin-bottom:0}
+.ansprice{font-size:60px;font-weight:800;letter-spacing:-2px;line-height:1.1;margin:2px 0 4px;
  color:#14622c;font-variant-numeric:tabular-nums}
 .ansname{font-size:19px;font-weight:700;margin:0 0 4px}
 .anshint{font-size:13.5px;color:#6b7280;margin:6px 0 0}
 .ansline{font-size:15px;margin:10px 0 0;padding:10px 12px;background:#f6f9ff;
  border:1px solid #dbe6f7;border-radius:10px}
+
+/* —— 各档价格对比横条 —— */
+.cmp{margin:14px 0 0}
+.cmp .row{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:13.5px}
+.cmp .nm{width:46px;flex:none;color:#6b7280}
+.cmp .track{display:block;flex:1;min-width:0;background:#eef0f4;border-radius:6px;height:12px;overflow:hidden}
+.cmp .bar{display:block;height:12px;border-radius:6px;background:#c9d2df;min-width:4px}
+.cmp .pv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.cmp .row.cur .nm{color:#14622c;font-weight:700}
+.cmp .row.cur .bar{background:linear-gradient(90deg,#3f9d63,#57b87e)}
+.cmp .row.cur .pv{color:#14622c}
+
+/* —— 答案卡切换动画 —— */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#ans .card{animation:fadeUp .18s ease-out}
 ul.can{margin:14px 0 0;padding:0;list-style:none;border-top:1px solid #eef0f4}
 ul.can li{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;
  border-bottom:1px solid #eef0f4;font-size:15px}
@@ -79,6 +103,37 @@ code{background:#f0f2f5;border-radius:4px;padding:1px 5px;font-size:13px}
 .rank b{font-variant-numeric:tabular-nums}
 footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
  border-top:1px solid #e3e6ec;padding-top:12px;line-height:1.6}
+@media (prefers-color-scheme:dark){
+  body{background:#121418;color:#e7eaf0}
+  .lead{color:#b9c0cc}
+  a{color:#8db4ea}
+  .sub,.big,.anshint,.more,.hintline,.qlab{color:#9aa3b2}
+  .card,.q,details{background:#1b1e24;border-color:#2c313a;box-shadow:none}
+  details summary{background:#20242c}
+  select.sel,select{background:#22262e;border-color:#3a414c;color:#e7eaf0}
+  select:focus{border-color:#8db4ea;outline-color:rgba(141,180,234,.2)}
+  button.now{background:#262b34;border-color:#3a414c;color:#e7eaf0}
+  button.now:hover{border-color:#8db4ea;color:#8db4ea;background:#262f3d}
+  .chip{background:#22262e;border-color:#3a414c;color:#e7eaf0}
+  .chip:hover{border-color:#8db4ea;color:#8db4ea}
+  .chip.on{background:#2f66b8;border-color:#2f66b8;color:#fff}
+  .state.ok{background:#123322;color:#7fd6a4;border-color:#1f5a3a}
+  .state.gap{background:#3a2f10;color:#f0d48a;border-color:#6b5518}
+  .state.closed{background:#22262e;color:#9aa3b2;border-color:#3a414c}
+  .anshero{background:linear-gradient(135deg,#14291c,#17211a);border-color:#235c3c}
+  .ansprice{color:#7fd6a4}
+  .ansline{background:#1a2333;border-color:#2c3d5c}
+  ul.can{border-top-color:#2c313a}
+  ul.can li{border-bottom-color:#2c313a}
+  table.d th,table.d td{border-color:#2c313a}
+  table.d thead th{background:#22262e}
+  code{background:#262b34;color:#cfd6e2}
+  footer{color:#6d7684;border-top-color:#2c313a}
+  .cmp .track{background:#262b34}
+  .cmp .bar{background:#4a5361}
+  .cmp .nm{color:#9aa3b2}
+  .cmp .row.cur .nm,.cmp .row.cur .pv{color:#7fd6a4}
+}
 @media print{
   body{background:#fff;padding:0;font-size:12pt}
   .q{display:none}
@@ -86,8 +141,8 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 }
 @media (max-width:520px){
   h1{font-size:23px}
-  .ansprice{font-size:36px}
-  input.search{max-width:100%}
+  .ansprice{font-size:46px}
+  select.sel{max-width:100%}
 }
 </style></head><body>
 <div class="wrap">
@@ -99,8 +154,10 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 <div class="q">
   <div class="qrow">
     <span class="qlab">1 · 你在哪个城市</span>
-    <input class="search" id="citySearch" type="search" autocomplete="off"
-           placeholder="输入城市名，比如 苏州、义乌">
+    <div class="selrow">
+      <select class="sel" id="provSel" aria-label="先选省份"></select>
+      <select class="sel" id="citySel" aria-label="再选城市"></select>
+    </div>
     <div id="suggest"></div>
   </div>
   <div class="qrow">
@@ -159,35 +216,64 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
     return null;
   }
 
-  /* ---- 选城市(搜索建议与下方城市名单共用) ---- */
+  /* ---- 省份 → 城市 两级下拉 ---- */
+  function provOf(c) { return c.province || "其他"; }
+  function provList() {
+    var seen = {}, out = [];
+    for (var i = 0; i < DATA.cities.length; i++) {
+      var p = provOf(DATA.cities[i]);
+      if (!seen[p]) { seen[p] = 1; out.push(p); }
+    }
+    return out;
+  }
+  function citiesOf(p) {
+    var out = [];
+    for (var i = 0; i < DATA.cities.length; i++) {
+      if (provOf(DATA.cities[i]) === p) out.push(DATA.cities[i].city);
+    }
+    return out;
+  }
+  function fillProv() {
+    var sel = document.getElementById("provSel"), ps = provList();
+    sel.innerHTML = "";
+    for (var i = 0; i < ps.length; i++) {
+      var o = document.createElement("option");
+      o.value = ps[i]; o.textContent = ps[i];
+      sel.appendChild(o);
+    }
+  }
+  function fillCitySel() {
+    var p = document.getElementById("provSel").value;
+    var sel = document.getElementById("citySel"), cs = citiesOf(p);
+    sel.innerHTML = "";
+    for (var i = 0; i < cs.length; i++) {
+      var o = document.createElement("option");
+      o.value = cs[i]; o.textContent = cs[i];
+      sel.appendChild(o);
+    }
+  }
+  function syncSels() {
+    var ps = provList(), p = provOf(cur);
+    if (ps.indexOf(p) < 0) p = ps[0];
+    document.getElementById("provSel").value = p;
+    fillCitySel();
+    document.getElementById("citySel").value = cur.city;
+  }
+
+  /* ---- 选城市(下拉与下方城市名单共用) ---- */
   function pick(name) {
     var c = findCity(name);
     if (!c) return;
     cur = c;
-    var inp = document.getElementById("citySearch");
-    if (inp) inp.value = c.city;
-    suggest(c.city); fillTimes(); render();
+    syncSels();
+    hotChips(); fillTimes(); render();
   }
   window.__pickCity = pick;
 
-  /* ---- 城市搜索 ---- */
-  function suggest(q) {
+  /* ---- 热门城市快捷 chips ---- */
+  function hotChips() {
     var box = document.getElementById("suggest");
-    q = (q || "").trim();
-    var list = [];
-    if (!q) {
-      list = DATA.hot.slice(0, 10);
-    } else {
-      for (var i = 0; i < DATA.cities.length && list.length < 12; i++) {
-        var c = DATA.cities[i];
-        if (c.city.indexOf(q) >= 0 || (c.province && c.province.indexOf(q) >= 0)) list.push(c.city);
-      }
-    }
-    if (!list.length) {
-      box.innerHTML = '<p class="hintline">没找到「' + esc(q) + '」，换个说法试试，'
-        + '或者展开最下面的「全国 ' + DATA.cities.length + ' 座城市」慢慢挑。</p>';
-      return;
-    }
+    var list = DATA.hot.slice(0, 10);
     var h = '<div class="chips">';
     for (var j = 0; j < list.length; j++) {
       h += '<span class="chip' + (list[j] === cur.city ? " on" : "") + '" data-c="'
@@ -289,9 +375,11 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 
     var meal = p.meal || p.any;
     if (meal) {
+      out.push('<div class="anshero">');
       out.push('<p class="big">' + (p.meal ? "这一档最便宜的一餐" : "这一档最便宜的一口") + "</p>");
       out.push('<p class="ansprice">' + yuan(meal.p) + "</p>");
       out.push('<p class="ansname">' + esc(meal.n) + "</p>");
+      out.push("</div>");
     }
 
     if (p.any && p.meal && p.any.p < p.meal.p) {
@@ -309,6 +397,25 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
       out.push('<p class="ansline">今天最贵的是<b>' + esc(worst.name) + "档</b>，"
         + "最便宜一餐 " + yuan(worst.meal.p) + "；现在这一档便宜 <b>"
         + yuan(worst.meal.p - p.meal.p) + "</b>。</p>");
+    }
+
+    // 各档地板价对比横条(一眼看出这一档在全天的位置)
+    var rows = [], maxp = 0;
+    for (var b = 0; b < city.periods.length; b++) {
+      var bp = city.periods[b];
+      if (bp.meal) { rows.push(bp); if (bp.meal.p > maxp) maxp = bp.meal.p; }
+    }
+    if (rows.length > 1 && maxp > 0) {
+      out.push('<p class="big" style="margin-top:16px">全天各档的最便宜一餐（这一档高亮）</p>');
+      out.push('<div class="cmp">');
+      for (var b2 = 0; b2 < rows.length; b2++) {
+        var rp = rows[b2], w = Math.max(4, Math.round(rp.meal.p / maxp * 100));
+        out.push('<div class="row' + (rp.name === p.name ? " cur" : "") + '">'
+          + '<span class="nm">' + esc(rp.name) + "</span>"
+          + '<span class="track"><span class="bar" style="width:' + w + '%"></span></span>'
+          + '<span class="pv">' + yuan(rp.meal.p) + "</span></div>");
+      }
+      out.push("</div>");
     }
 
     if (p.top && p.top.length) {
@@ -363,10 +470,15 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   function init() {
     curTime = nowTime();
     fromUrl();
-    suggest(cur.city);
-    document.getElementById("citySearch").value = cur.city;
+    fillProv();
+    syncSels();
+    hotChips();
     fillTimes();
-    document.getElementById("citySearch").oninput = function () { suggest(this.value); };
+    document.getElementById("provSel").onchange = function () {
+      fillCitySel();
+      pick(document.getElementById("citySel").value);
+    };
+    document.getElementById("citySel").onchange = function () { pick(this.value); };
     document.getElementById("times").onchange = function () { curTime = this.value; render(); };
     document.getElementById("nowbtn").onclick = function () {
       curTime = nowTime(); fillTimes(); render();

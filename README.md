@@ -1,5 +1,12 @@
 # 麦当劳几点最便宜 (mcd-when)
 
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-14a35a)
+![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)
+![Cities](https://img.shields.io/badge/cities-388-orange)
+![Queries](https://img.shields.io/badge/price%20queries-21038-dc3545)
+![PRs](https://img.shields.io/badge/PRs-welcome-blueviolet)
+
 > 一天分四段卖，每段的菜单不一样，最便宜的一口也不一样。
 > 我们把**全国 31 个省级行政区、388 座城市**的麦当劳都问了一遍——
 > **21038 次逐笔问价**，几点能点什么、多少钱，摊开给你看。
@@ -7,6 +14,19 @@
 ![全国 388 城，几点去最便宜](images/heatmap.png)
 
 **📖 直接查你自己的城市（不用装任何东西，手机也能开）：https://mcd-when.app.workbuddy.host/**
+
+<details>
+<summary><b>页面长什么样</b>（点击展开实拍）</summary>
+
+手机端实际效果（深色模式同理，会随系统自动切换）：
+
+![手机端实拍](images/usage-414.png)
+
+桌面端：
+
+![桌面端实拍](images/usage-1280.png)
+
+</details>
 
 ---
 
@@ -81,6 +101,22 @@
 - **不替你下单** —— 全链路只读, `create-order` / `auto-bind-coupons` 等写操作一概不碰
 - **不做外送** —— 外送价依赖个人收货地址, 属于用户私有配置, 本项目不采集
 - **不锁定你的位置** —— 城市 + 关键词任选门店, 谁都能对自己所在的城市跑一遍
+
+## 部署到你自己的 GitHub（GitHub Pages）
+
+报告是**单一静态 HTML**，这也是 GitHub Pages 最省事的一类项目：
+
+```bash
+git clone <你的仓库地址> mcd-when && cd mcd-when
+python src/render_report.py        # 可选: 重新渲染 dist/report.html
+cp dist/report.html index.html     # 根目录的 index.html 就是 Pages 入口
+git add index.html && git commit -m "docs: deploy report to Pages" && git push
+```
+
+然后在仓库 **Settings → Pages** 里 Source 选 `main` / 根目录，保存后约一 minute 生效，
+地址形如：`https://<你的用户名>.github.io/mcd-when/`。
+
+> 单文件自包含，没有构建步骤、没有依赖、不需要 CI。
 
 ## 用起来（按门槛从低到高）
 
@@ -180,22 +216,47 @@ python src/now.py --city 上海
 ## 技术说明
 
 - 零第三方依赖, 纯 Python 标准库, Python 3.10+ 直接跑
-- MCP 接入细节、工具调用链与业务价值: [MCP_INTEGRATION.md](MCP_INTEGRATION.md)
+- MCP 接入细节、工具调用链与业务价值: [docs/MCP_INTEGRATION.md](docs/MCP_INTEGRATION.md)
 - 限流安全: 内置 600 次/分钟节流与 429 退避
 - 合规: 本项目为 2026 麦当劳程序员创意开发大赛参赛作品, 非麦当劳官方产品;
   遵守《麦当劳 MCP 服务规则》, 不商用、不导流、不含任何凭证(Token 只走环境变量)
+
+## 自检
+
+```bash
+python -m unittest discover tests          # 9 项冒烟测试(数据/分类/产物, 零依赖)
+python src/check_layout.py dist/report.html # 四视口零溢出体检
+```
+
+## 参与方式
+
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。觉得某个价格和 App 对不上？直接开 issue，
+每座城市都留了门店编号和核价日期，可复核。
+
+## 许可证
+
+[MIT](LICENSE)。注意: 「麦当劳 / McDonald's」是各自持有人的商标,
+本项目与麦当劳官方无隶属、背书或赞助关系, 不含也不再分发任何麦当劳的
+Logo、图片或商业素材; 页面展示的价格是运行时从官方订餐接口实时读取的,
+随时可能变动, 下单前请以麦当劳 App 实际显示为准。
 
 ## 仓库结构
 
 ```
 mcd-when/
 ├── README.md                  你在这里
-├── CONTEST_DECLARATION.md     参赛声明(官方原文, 未改动)
-├── MCP_INTEGRATION.md         MCP 调用链说明
+├── CHANGELOG.md               版本演进
+├── CONTRIBUTING.md            参与方式 / 代码约定
+├── LICENSE                    MIT(含商标声明)
+├── docs/
+│   ├── MCP_INTEGRATION.md     MCP 调用链说明
+│   ├── PROMO.md               四平台宣发文案
+│   ├── CONTEST_DECLARATION.md 参赛声明(官方原文, 未改动)
+│   └── ADVANCED.md            进阶: 批量核价与按需单城查询
+├── tests/test_smoke.py        零依赖冒烟测试(9 项)
 ├── mcp-config.example.json    MCP 配置示例(环境变量占位符)
 ├── config.example.json        普查配置示例(城市/渠道)
 ├── skill/SKILL.md             Skill 封装(AI 客户端可装载)
-├── PROMO.md                   四平台宣发文案
 ├── workbuddy.md               WorkBuddy 专项奖励说明
 ├── src/
 │   ├── mcd_client.py          Streamable HTTP MCP 客户端(零依赖, 内置限流)
@@ -203,6 +264,7 @@ mcd-when/
 │   ├── cities_cn.py           全国城市清单(31 省, 含百强县)
 │   ├── probe_cities.py        全国门店探测(每城 1 次调用)
 │   ├── survey_national.py     全国普查(按档核价, 断点续跑)
+│   ├── survey_batch.py        批量核价(一次拿全菜单, 按需单城查询)
 │   ├── survey.py              全天地毯式普查(老脚本, 交叉验证基准)
 │   ├── analyze_surface.py     验证「价格全天恒定」等关键假设
 │   ├── analyze_national.py    全国结论汇总(开档时间/价差/异常值)
@@ -212,6 +274,6 @@ mcd-when/
 │   ├── check_layout.py        排版零溢出体检(四视口自动检测)
 │   └── make_demo.py           演示数据生成(仅预览 UI)
 ├── data/                      工具 schema / 城市探测 / 全国价格表
-├── images/heatmap.png         README 首图(真实数据渲染)
+├── images/                    README 首图 + 实拍截图
 └── dist/                      report.html(交互报告) / card.html(首图源)
 ```

@@ -8,8 +8,17 @@ snapshots/
 # Python
 __pycache__/
 *.pyc
+.venv/
+venv/
 
 # 本地配置(含个人地址关键词)
 config.json
 survey_*.log
 *.log
+
+# 临时调试截图(正式截图放 images/)
+shots/
+
+# 系统杂项
+.DS_Store
+Thumbs.db
