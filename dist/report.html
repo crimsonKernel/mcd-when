@@ -25,7 +25,12 @@ body{margin:0;background:#FBF7F2;color:#1f2329;
 .nav .dl{margin-left:auto;font-size:13px;font-weight:700;color:#8C2F0B}
 
 /* —— 头部: 黄金3秒钩子(暖奶油) —— */
-.hero{background:linear-gradient(135deg,#FFFDF9 0%,#FDF1E3 100%);
+/* 光晕直接用背景渐变画, 不用伪元素: 伪元素的负 inset 会让 scrollWidth
+   超出盒宽, 排版体检会判溢出(而且没有任何视觉收益)。 */
+.hero{background:
+  radial-gradient(120% 85% at 16% -12%, rgba(255,171,64,.30), rgba(255,171,64,0) 62%),
+  radial-gradient(85% 65% at 102% 112%, rgba(194,65,12,.11), rgba(194,65,12,0) 70%),
+  linear-gradient(135deg,#FFFDF9 0%,#FDF1E3 100%);
  color:#2B1B12;border-radius:18px;padding:26px 22px 22px;margin:0 0 16px;
  box-shadow:0 1px 2px rgba(120,80,20,.06),0 10px 26px rgba(120,80,20,.09)}
 .hero .hook{display:inline-block;background:#FFF1E2;border:1px solid #F2D9B6;
@@ -113,6 +118,13 @@ button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
 .anshero .ansname{margin-bottom:0}
 .ansprice{font-size:64px;font-weight:800;letter-spacing:-2.5px;line-height:1.05;margin:2px 0 4px;
  color:#B4531A;font-variant-numeric:tabular-nums}
+/* 价格数字做成暖色渐变: 全页只有一个东西值得被这样强调。
+   用 @supports 兜底 —— 不支持 background-clip:text 的浏览器拿纯色, 不会看不见字。 */
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .ansprice{background:linear-gradient(135deg,#C2410C 0%,#E8890C 55%,#F5B45B 100%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent}
+}
 .pdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;
  vertical-align:middle}
 .ansname{font-size:19px;font-weight:700;margin:0 0 4px}
@@ -135,6 +147,60 @@ button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
 /* —— 答案卡切换动画 —— */
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 #ans .card{animation:fadeUp .18s ease-out}
+
+/* —— 全天时段带: 把「今天四档」画成一条能点的时间轴 —— */
+.dayband{margin:0 0 16px;padding:13px 14px 12px;border:1px solid #F0E2CE;border-radius:14px;
+ background:linear-gradient(180deg,#FFFDF8 0%,#FFF8EE 100%)}
+.dbhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 9px}
+.dbhead .t{font-size:12.5px;font-weight:800;color:#8a6100;letter-spacing:.5px}
+.dbhead .h{font-size:11.5px;color:#A9907A;white-space:nowrap}
+.dbscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.dbtrack{position:relative;display:flex;height:58px;border-radius:10px;
+ overflow:hidden;background:#F1E9DC;box-shadow:inset 0 1px 3px rgba(120,80,20,.13)}
+/* 宽度按分钟数用 flex-grow 等比例分配, 不写死百分比 ——
+   百分比在 flex 里和 min-width 会打架, 窄屏会把长文本挤成省略号。 */
+.dbseg{position:relative;display:flex;flex-direction:column;justify-content:center;gap:1px;
+ padding:4px 7px;min-width:58px;overflow:hidden;cursor:pointer;border:0;
+ border-right:1px solid rgba(255,255,255,.5);color:#fff;text-align:left;font:inherit;
+ transition:filter .18s ease,box-shadow .18s ease}
+.dbseg:last-child{border-right:0}
+.dbseg:hover{filter:brightness(1.08)}
+.dbseg:active{filter:brightness(.96)}
+.dbseg .n{font-size:12px;font-weight:800;line-height:1.2;white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis}
+.dbseg .p{font-size:12.5px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.96}
+.dbseg .h{font-size:10.5px;line-height:1.15;font-variant-numeric:tabular-nums;opacity:.85;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dbseg.cur{box-shadow:inset 0 0 0 2px #7C1D12;z-index:1}
+/* 真空带: 两档之间谁都点不到的那几分钟 —— 窄缝不贴文字,
+   免得把「真空带很窄」这个事实用省略号糊掉。 */
+.dbseg.gap{min-width:8px;padding:4px 2px;
+ background:repeating-linear-gradient(45deg,#EFE6D8 0 6px,#E3D7C3 6px 12px);
+ color:#8A7361;cursor:default}
+.dbseg.gap .n{font-size:10px;font-weight:700;text-align:center;padding:0 1px}
+.dbseg.empty{background:#E9DFCF;color:#8A7361;cursor:default}
+.dblegend{display:flex;flex-wrap:wrap;gap:10px;margin:9px 0 0;font-size:11.5px;color:#9C8873}
+.dblegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;
+ vertical-align:baseline}
+
+/* —— 全局质感 —— */
+::selection{background:#FFD9A8;color:#5A2A08}
+:focus-visible{outline:2px solid #C2410C;outline-offset:2px;border-radius:6px}
+.dbscroll::-webkit-scrollbar{height:6px}
+.dbscroll::-webkit-scrollbar-thumb{background:#E0D2BE;border-radius:6px}
+.dbscroll::-webkit-scrollbar-track{background:transparent}
+
+/* —— 首屏入场: 分层落位 —— */
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.wrap>.nav{animation:rise .45s cubic-bezier(.22,1,.36,1) both}
+.wrap>.hero{animation:rise .55s .05s cubic-bezier(.22,1,.36,1) both}
+.wrap>.q{animation:rise .55s .11s cubic-bezier(.22,1,.36,1) both}
+.wrap>#sec-answer{animation:rise .55s .17s cubic-bezier(.22,1,.36,1) both}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+}
+
 ul.can{margin:14px 0 0;padding:0;list-style:none;border-top:1px solid #eef0f4}
 ul.can li{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;
  border-bottom:1px solid #eef0f4;font-size:15px}
@@ -203,8 +269,10 @@ table.mt thead th{position:sticky;top:0;background:#F6F7F9;text-align:left;
  white-space:nowrap;z-index:1}
 table.mt td{padding:8px 10px;border-bottom:1px solid #F2F3F5;vertical-align:middle}
 table.mt tbody tr:last-child td{border-bottom:none}
-table.mt tbody tr:hover{background:#FAFBFC}
+table.mt tbody tr:nth-child(even){background:#FCFCFD}
+table.mt tbody tr:hover{background:#FFF8EE}
 table.mt tbody tr.on{background:#FFF6E8}
+table.mt tbody tr.on td:first-child{box-shadow:inset 3px 0 0 #C2410C}
 table.mt td.p{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;
  white-space:nowrap}
 table.mt td.a{text-align:right;white-space:nowrap}
@@ -278,8 +346,14 @@ details[open] summary::before{content:"▾ "}
 details .dbody{padding:4px 16px 16px}
 details h3{font-size:15px;margin:16px 0 6px}
 code{background:#f0f2f5;border-radius:4px;padding:1px 5px;font-size:13px}
-.rank{font-size:14.5px;margin:0 0 6px}
+/* 榜单行: 序号做成一枚徽章, 行 hover 有反馈(纯 CSS, 榜单页零 JS) */
+.rank{font-size:14.5px;margin:0 0 6px;padding:6px 10px;border-radius:9px;
+ border:1px solid transparent;transition:background .15s,border-color .15s}
+.rank:hover{background:#FFF8EE;border-color:#F2D9B6}
 .rank b{font-variant-numeric:tabular-nums}
+h3{position:relative;padding-left:11px;margin:22px 0 10px;font-size:16.5px}
+h3::before{content:"";position:absolute;left:0;top:.28em;bottom:.28em;width:3px;
+ border-radius:2px;background:linear-gradient(180deg,#F0A22E,#C2410C)}
 footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
  border-top:1px solid #e3e6ec;padding-top:12px;line-height:1.6}
 @media (prefers-color-scheme:dark){
@@ -301,7 +375,10 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   .state.closed{background:#22262e;color:#9aa3b2;border-color:#3a414c}
   .anshero{background:linear-gradient(135deg,#241A0D,#1C1409);border-color:#5E4318;box-shadow:none}
   .anshero .big{color:#B9A68E}.anshero .ansname{color:#F0E7DB}
-  .ansprice{color:#F5B45B}
+  .ansprice{color:#F5B45B;background:none;-webkit-text-fill-color:#F5B45B}
+  table.mt tbody tr:nth-child(even){background:#1A1D23}
+  table.mt tbody tr:hover{background:#22262E}
+  table.mt tbody tr.on td:first-child{box-shadow:inset 3px 0 0 #F5B45B}
   .cmp .row.cur .pv{color:#F5B45B}
   .cmp .row.cur .nm{color:#e7eaf0}
   .hero{background:linear-gradient(135deg,#2E1E0F,#1E1409);box-shadow:none}
@@ -314,6 +391,18 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   .hero-stats .hs{background:#2A1D0F;border-color:#4A3418;color:#CBB79C}
   .hero-stats .hs b{color:#F5B45B}
   .ansline{background:#1a2333;border-color:#2c3d5c}
+  .dayband{background:linear-gradient(180deg,#241A0D,#1C1409);border-color:#4A3418}
+  .dbhead .t{color:#F0C98A}
+  .dbhead .h{color:#9A8672}
+  .dbtrack{background:#191209;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
+  .dbseg{border-right-color:rgba(0,0,0,.45)}
+  .dbseg.cur{box-shadow:inset 0 0 0 2px #F5B45B}
+  .dbseg.gap{background:repeating-linear-gradient(45deg,#2A2216 0 6px,#221B12 6px 12px);
+    color:#9A8672}
+  .dbseg.empty{background:#241D14;color:#9A8672}
+  .dblegend{color:#9A8672}
+  .dbscroll::-webkit-scrollbar-thumb{background:#4A3418}
+  .rank:hover{background:#241A0D;border-color:#4A3418}
   ul.can{border-top-color:#2c313a}
   ul.can li{border-bottom-color:#2c313a}
   table.d th,table.d td{border-color:#2c313a}
@@ -343,6 +432,15 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   h1{font-size:23px}
   .ansprice{font-size:46px}
   select.sel{max-width:100%}
+  .hero{padding:20px 16px 18px}
+  .hero h1{font-size:27px}
+  .hero .hsub{font-size:15px}
+  .dbtrack{height:52px}
+  .dbseg{padding:3px 5px}
+  .dbseg .n{font-size:11px}
+  .dbseg .p{font-size:11.5px}
+  .dbseg .h{display:none}
+  .cmp .nm{width:56px}
 }
 </style></head><body>
 <div class="wrap">
@@ -426,7 +524,7 @@ python src/now.py --city 上海        # 我这店此刻买得到什么、几块
 cd mcd-when
 python src/render_report.py        # 用仓库里的快照渲染页面
 python src/parity_combo.py         # JS 背包 vs Python 背包对拍
-python src/check_combo.py          # 无头浏览器走 10 条交互路径
+python src/check_combo.py          # 无头浏览器走 12 条交互路径
 python -m unittest discover tests   # 41 项冒烟测试</pre>
 <p class="big">合规声明</p>
 <p>本项目为 2026 麦当劳程序员创意开发大赛参赛作品，<b>非麦当劳官方产品</b>，
@@ -580,6 +678,82 @@ python -m unittest discover tests   # 41 项冒烟测试</pre>
     return best;
   }
 
+  /* ---- 全天时段带: 按真实起止时刻画一条能点的时间轴 ----
+     四档各占多宽是算出来的, 不是四等分 —— 「真空带很窄」这件事
+     必须一眼看得出来, 所以缝隙也按分钟数等比例画。 */
+  var DBCOL = { "早餐": "#D98324", "午餐": "#C2410C", "下午茶": "#B0479E", "夜市": "#3F5BA9" };
+  function dbColor(name) { return DBCOL[name] || "#8A6D3B"; }
+  function dayBand(city, t) {
+    var ps = city.periods || [];
+    if (!ps.length) return "";
+    var b0 = toMin(city.biz[0]), b1 = toMin(city.biz[1]);
+    if (b1 <= b0) b1 = 24 * 60 - 1;
+    var span = b1 - b0;
+    if (span <= 0) return "";
+    var curP = periodOf(city, t), segs = [], cursor = b0;
+    for (var i = 0; i < ps.length; i++) {
+      var p = ps[i], s = Math.max(b0, toMin(p.start)), e = Math.min(b1, toMin(p.end));
+      if (e <= s) continue;
+      if (s > cursor) {   // 两档之间: 官方换菜单的空档
+        segs.push({ gap: 1, from: cursor, to: s, mins: s - cursor });
+      }
+      segs.push({ p: p, from: s, to: e, mins: e - s });
+      cursor = e;
+    }
+    if (cursor < b1) segs.push({ gap: 1, from: cursor, to: b1, mins: b1 - cursor });
+    if (!segs.length) return "";
+    var h = '<div class="dayband">'
+      + '<div class="dbhead"><span class="t">今天这一路怎么走的</span>'
+      + '<span class="h">点一段就跳过去</span></div>'
+      + '<div class="dbscroll"><div class="dbtrack">';
+    for (var j = 0; j < segs.length; j++) {
+      var g = segs[j];
+      if (g.mins <= 0) continue;
+      // 宽度 ∝ 分钟数: flex-grow 给分钟值, 剩余空间按它分
+      var st = "flex:" + g.mins + " 1 0";
+      if (g.gap) {
+        var gm = g.mins >= 60
+          ? Math.floor(g.mins / 60) + " 小时 " + (g.mins % 60) + " 分钟"
+          : g.mins + " 分钟";
+        // 窄缝不贴字: 省略号会把「真空带很窄」这个事实糊掉
+        var label = g.mins >= 45 ? '<span class="n">真空带</span>' : "";
+        h += '<div class="dbseg gap" style="' + st + '" title="菜单真空带 ' + gm
+          + '，上一档已收、下一档没开" aria-label="菜单真空带 ' + gm + '">' + label + "</div>";
+      } else {
+        var pp = g.p, has = !!pp.meal;
+        h += '<button type="button" class="dbseg' + (curP && curP.name === pp.name ? " cur" : "")
+          + (has ? "" : " empty") + '" style="' + st + ';background:' + dbColor(pp.name)
+          + '" data-t="' + esc(pp.start) + '" title="' + esc(pp.name) + " " + esc(pp.start)
+          + "–" + esc(pp.end) + (has ? " · 最便宜一餐 ¥" + (pp.meal.p / 100).toFixed(2) : " · 这一档没有正餐")
+          + '"><span class="n">' + esc(pp.name) + '</span>'
+          + (has ? '<span class="p">¥' + (pp.meal.p / 100).toFixed(2) + "</span>"
+                 : '<span class="p">无正餐</span>')
+          + '<span class="h">' + esc(pp.start) + "</span></button>";
+      }
+    }
+    h += "</div></div>"
+      + '<div class="dblegend"><span><i style="background:#D98324"></i>早餐</span>'
+      + '<span><i style="background:#C2410C"></i>午餐</span>'
+      + '<span><i style="background:#B0479E"></i>下午茶</span>'
+      + '<span><i style="background:#3F5BA9"></i>夜市</span>'
+      + '<span><i style="background:repeating-linear-gradient(45deg,#EFE6D8 0 3px,#E3D7C3 3px 6px)"></i>真空带</span>'
+      + "</div></div>";
+    return h;
+  }
+  function bindDayBand() {
+    var nodes = document.querySelectorAll("#ans .dbseg[data-t]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].onclick = function () {
+        var t = this.getAttribute("data-t");
+        if (!t) return;
+        bestName = null;
+        curTime = clampSlot(cur, t);
+        fillTimes();
+        render();
+      };
+    }
+  }
+
   function fillTimes() {
     var sel = document.getElementById("times"), slots = slotList(cur);
     sel.innerHTML = "";
@@ -605,11 +779,19 @@ python -m unittest discover tests   # 41 项冒烟测试</pre>
   }
 
   /* ---- 主渲染 ---- */
+  function finish(out) {
+    document.getElementById("ans").innerHTML = out.join("");
+    bindDayBand();
+    syncUrl();
+  }
   function render() {
     var city = cur, t = curTime, out = [];
     out.push('<div class="card">');
     out.push('<p class="sub" style="margin-bottom:10px">' + esc(city.city)
       + (city.province ? " · " + esc(city.province) : "") + " · " + esc(city.store.name) + "</p>");
+
+    // 全天时段带: 先给全貌, 再给这一档的细节
+    out.push(dayBand(city, t));
 
     var p = periodOf(city, t);
     if (!p) {
@@ -633,8 +815,7 @@ python -m unittest discover tests   # 41 项冒烟测试</pre>
       out.push('<p class="anshint">门店营业时间 ' + esc(city.biz[0]) + "–" + esc(city.biz[1])
         + '。开门不等于能点：时段没开档，App 里就是空的。</p>');
       out.push("</div>");
-      document.getElementById("ans").innerHTML = out.join("");
-      syncUrl();
+      finish(out);
       return;
     }
 
@@ -717,10 +898,9 @@ python -m unittest discover tests   # 41 项冒烟测试</pre>
       + '<p class="more">想把这一条发给朋友？地址栏里的链接可以直接复制：'
       + "<code>?" + "city=" + encodeURIComponent(city.city) + "&amp;t=" + esc(t) + "</code></p>");
     out.push("</div>");
-    document.getElementById("ans").innerHTML = out.join("");
+    finish(out);
     bindBudget(cur.city, p.name);
     bindMenuTable(cur.city, p.name);
-    syncUrl();
   }
 
   var PC = {"早餐": "#E8A33D", "午餐": "#D9534F", "下午茶": "#5B8DEF", "夜市": "#6A5ACD"};

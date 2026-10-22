@@ -39,8 +39,8 @@
 
 纯 Python 标准库, 零第三方依赖, 全链路只读(写操作白名单硬隔离, 跑一万次也不会下一单)。
 
-仓库: https://mcd-when.app.workbuddy.host/
-在线查你自己的城市: https://mcd-when.app.workbuddy.host/
+仓库: https://crimsonkernel.github.io/mcd-when/
+在线查你自己的城市: https://crimsonkernel.github.io/mcd-when/
 
 ---
 
@@ -79,14 +79,14 @@
 - 24 个城市没有早餐档
 - 15 个城市早餐反而比午餐贵
 - 10:15–10:44 是「菜单真空带」, 谁都买不到
-查你自己城市的: https://mcd-when.app.workbuddy.host/
+查你自己城市的: https://crimsonkernel.github.io/mcd-when/
 
 **版本 B(工具梗)**:
 
 别人参加麦当劳大赛都在做「怎么凑单最便宜」,
 我做的是「几点去能买到什么」——而且跑了全国 388 座城市。
 发现一个反常识: 不是全国统一早餐最便宜, 有 20 座城市是午餐最便宜。
-https://mcd-when.app.workbuddy.host/
+https://crimsonkernel.github.io/mcd-when/
 
 ---
 
@@ -96,8 +96,8 @@ https://mcd-when.app.workbuddy.host/
 发现 10:15-10:44 之间早餐午餐都买不到(官方叫时段切换, 我叫它真空带🤣),
 还有 7 点开门但 7:14 前啥也点不了, 重庆甚至要 8:14 才能买早餐。
 
-想知道咱们这儿几点最便宜: https://mcd-when.app.workbuddy.host/
-觉得有意思的话帮忙去 GitHub 点个 Star: https://mcd-when.app.workbuddy.host/
+想知道咱们这儿几点最便宜: https://crimsonkernel.github.io/mcd-when/
+觉得有意思的话帮忙去 GitHub 点个 Star: https://github.com/crimsonKernel/mcd-when
 在参加比赛, 前 100 名有汉堡回车键周边, 拜托了🙏
 
 ---

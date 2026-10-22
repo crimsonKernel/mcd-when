@@ -4,8 +4,10 @@ check_layout.py 只管「有没有溢出」, 不管「交互是不是坏的」�
 预算搭配器是纯前端逻辑(查表 + 渲染), 光看 HTML 源码证明不了它能跑,
 所以照它的办法: 注入一段脚本, 用 Chrome headless 加载, 把结果写进 <title> 带出来。
 
-验十件事(对两个入口各跑一遍 —— 单文件离线版 report.html 和三页版 index.html,
+验十二件事(对两个入口各跑一遍 —— 单文件离线版 report.html 和三页版 index.html,
 后者靠 <script src="mcd-data.js"> 供数, 路径解析也要验):
+  0. 页面加载无 JS 报错(有错则 title 里带 ERROR:)
+  0b. 全天时段带画出来了: ≥4 段、可点段 ≥2、渲染干净、点一段答案跟着换档
   1. 页面加载无 JS 报错(有错则 title 里带 ERROR:)
   2. 选好城市后, 预算搭配器默认就渲染出答案(不是空白的)
   3. 点 ¥50 chip / 填自定义金额 ¥23 两条路径都对
@@ -140,6 +142,28 @@ PROBE = """
       var same = names.length === sorted.length;
       for (var r = 0; r < names.length; r++) if (names[r] !== sorted[r]) same = false;
       out.push("sortName:" + (same && names.length > 0 ? "OK" : "BAD"));
+      // 9) 全天时段带放在最后: 它一点就整卡重渲染, 会把上面拿到的
+      //    DOM 引用全部作废(旧节点已脱离文档), 所以必须收尾。
+      var segs = document.querySelectorAll("#ans .dbseg");
+      var clickable = document.querySelectorAll("#ans .dbseg[data-t]");
+      out.push("dayband:" + (document.querySelector("#ans .dayband") && segs.length >= 4
+        && clickable.length >= 2 && clean("ans") ? "OK" : "BAD"));
+      if (clickable.length >= 2) {
+        // 点一个不是当前档的段, 答案要跟着换
+        var cur = document.querySelector("#ans .dbseg.cur");
+        var target = null;
+        for (var ci = 0; ci < clickable.length; ci++) {
+          if (!cur || clickable[ci] !== cur) { target = clickable[ci]; break; }
+        }
+        if (target) {
+          var want = target.querySelector(".n").textContent;
+          var before = txt("ans");
+          target.click();
+          var after = txt("ans");
+          out.push("daybandJump:" + (before !== after && after.indexOf(want) >= 0
+            && clean("ans") ? "OK" : "BAD"));
+        }
+      }
     } catch (e) {
       out.push("EX:" + e.message);
     }

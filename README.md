@@ -8,7 +8,7 @@
 
 ![Cities](https://img.shields.io/badge/cities-388-orange)
 
-![Queries](https://img.shields.io/badge/price%20queries-36152-dc3545)
+![Queries](https://img.shields.io/badge/price%20queries-36200-dc3545)
 
 ![PRs](https://img.shields.io/badge/PRs-welcome-blueviolet)
 
@@ -18,11 +18,11 @@
 >   
 > 我们把**全国 31 个省级行政区、388 座城市**的麦当劳都问了一遍——
 >   
-> **36152 次逐笔问价**（其中 387 城是完整菜单逐商品核价），几点能点什么、多少钱，摊开给你看。
+> **36200 次逐笔问价**（其中 387 城是完整菜单逐商品核价），几点能点什么、多少钱，摊开给你看。
 
 ![全国 388 城，几点去最便宜](images/heatmap.png)
 
-**📖 直接查你自己的城市（不用装任何东西，手机也能开）：<https://mcd-when.app.workbuddy.host/>**
+**📖 直接查你自己的城市（不用装任何东西，手机也能开）：<https://crimsonkernel.github.io/mcd-when/>**
 
 <details>
 
@@ -62,7 +62,9 @@
    东北 05:14 就能买，重庆要等到 08:14，乌鲁木齐干脆没有早餐档。
 4. **兜里多少钱，就给你凑多少东西**：选好城市和时段，页面上直接问「我有 ¥20 能吃到什么」——
    
-   全国 388 城、9454 组搭配都是提前算好的，打开就有答案，零 Token、不用装任何东西。
+   0/1 背包在**这一档的完整在售菜单上现算**（有主食是硬门槛，不是优先级），
+   打开就有答案，零 Token、不用装任何东西。网页端算的这套背包和 MCP 端逐分对拍过，
+   同一个问题两个入口同一个答案（`src/parity_combo.py`，207 个用例零不一致）。
 
 </details>
 
@@ -113,7 +115,7 @@
 
 **所有价格均来自 `calculate-price` 实时核价, 未经任何模型估算, 未产生任何真实订单。**
 
-- 在线查你自己的城市(无需 Token): **<https://mcd-when.app.workbuddy.host/>**（问答 / 全国榜单 / 方法与合规 三页）
+- 在线查你自己的城市(无需 Token): **<https://crimsonkernel.github.io/mcd-when/>**（问答 / 全国榜单 / 方法与合规 三页）
 - 离线版: [dist/report.html](dist/report.html)(双击即开, 完全自包含, 断网也能用)
 
 ## 它在回答什么问题
@@ -136,6 +138,10 @@
 你选的那件是**必选**的，剩下的钱自动配最多小食。网页端算的这套背包和 MCP 端
 逐分对拍过（`src/parity_combo.py`，207 个用例零不一致），同一个问题两个入口同一个答案。
 
+答案上方还有一条**全天时段带**：早餐/午餐/下午茶/夜市各占多宽，是按真实起止分钟数
+等比例画的，不是四等分——所以「10:15–10:44 那段真空带窄得可怜」这件事一眼就能看出来。
+点任意一段，答案直接跳到那一档。
+
 ## 它不做什么
 
 - **不估算价格** —— 所有数字只信 `calculate-price` 的实时返回
@@ -156,6 +162,7 @@ git clone <你的仓库地址> mcd-when && cd mcd-when
 ```
 
 地址形如：`https://<你的用户名>.github.io/mcd-when/`，根路径就是问答页。
+本项目的线上版：**<https://crimsonkernel.github.io/mcd-when/>**。
 
 > 没有构建步骤、没有依赖、不需要装东西。
 > 想完全手动也行：`python src/render_report.py` 重新渲染后，
@@ -168,7 +175,7 @@ git clone <你的仓库地址> mcd-when && cd mcd-when
 
 | 方式        | 适合谁         | 要做什么                                                                    |
 | --------- | ----------- | ----------------------------------------------------------------------- |
-| **打开网页**  | 所有人（推荐）     | 打开 <https://mcd-when.app.workbuddy.host/> → 选城市 → 选几点去 → 看答案，还能直接问「¥20 能吃到什么」。不用注册、不用装东西 |
+| **打开网页**  | 所有人（推荐）     | 打开 <https://crimsonkernel.github.io/mcd-when/> → 选城市 → 选几点去 → 看答案，还能直接问「¥20 能吃到什么」。不用注册、不用装东西 |
 | **离线版**   | 没网也想查       | 下载 [dist/report.html](dist/report.html) 双击即开，功能完全一样                     |
 | **问 AI**  | 装了 Skill 的人 | 把 `skill/SKILL.md` 加进 AI 客户端，直接问「现在还买得到早餐吗」                             |
 | **自己跑数据** | 想跑自己城市的人    | 需要 MCP Token，见下方六步                                                      |
@@ -296,7 +303,7 @@ python -m unittest discover tests           # 41 项冒烟测试(数据/分类/�
 python src/render_report.py                 # 渲染四产物(含 5 个文件的脚本语法自检, 挂了构建失败)
 python src/parity_combo.py                  # 页面 JS 背包 vs Python 背包逐分对拍(207 例)
 python src/check_layout.py                  # 四页面 × 四视口零溢出体检
-python src/check_combo.py                   # 预算搭配器实测(单文件 + 三页两入口, 各 10 条路径)
+python src/check_combo.py                   # 预算搭配器实测(单文件 + 三页两入口, 各 12 条路径)
 ```
 
 ## 参与方式
@@ -323,17 +330,18 @@ mcd-when/
 ├── CHANGELOG.md               版本演进
 ├── CONTRIBUTING.md            参与方式 / 代码约定
 ├── LICENSE                    MIT(含商标声明)
+├── CONTEST_DECLARATION.md     参赛声明(官方原文, 文件名未改动 —— 赛事硬性要求)
+├── MCP_INTEGRATION.md         MCP 调用链说明(赛事硬性要求, 文件名未改动)
+├── workbuddy.md               WorkBuddy 专项奖励说明
 ├── docs/
-│   ├── MCP_INTEGRATION.md     MCP 调用链说明
 │   ├── PROMO.md               四平台宣发文案
-│   ├── CONTEST_DECLARATION.md 参赛声明(官方原文, 未改动)
-│   └── ADVANCED.md            进阶: 批量核价与按需单城查询
-├── tests/test_smoke.py        零依赖冒烟测试(33 项)
+│   ├── ADVANCED.md            进阶: 批量核价与按需单城查询
+│   └── MCP_DEMO.md            MCP 客户端演示脚本
+├── tests/test_smoke.py        零依赖冒烟测试(41 项)
 ├── mcp-config.example.json    MCP 配置示例(环境变量占位符)
 ├── mcp-when-config.example.json  mcd-when + 官方 MCP 双 Server 配置
 ├── config.example.json        普查配置示例(城市/渠道)
 ├── skill/SKILL.md             Skill 封装(AI 客户端可装载)
-├── workbuddy.md               WorkBuddy 专项奖励说明
 ├── src/
 │   ├── mcd_client.py          Streamable HTTP MCP 客户端(零依赖, 内置限流)
 │   ├── discover.py            工具参数 schema 勘探
@@ -348,7 +356,7 @@ mcd-when/
 │   ├── render_report.py       渲染三页版站点 + 单文件离线版(含脚本语法自检)
 │   ├── render_card.py         渲染 README 首图(dist/card.html)
 │   ├── check_layout.py        排版零溢出体检(四页面 × 四视口自动检测)
-│   ├── check_combo.py         预算搭配器实测(无头浏览器, 两个入口 × 10 条路径)
+│   ├── check_combo.py         预算搭配器实测(无头浏览器, 两个入口 × 12 条路径)
 │   ├── parity_combo.py        页面 JS 背包 vs Python 背包逐分对拍(207 例)
 │   ├── combo.py               「预算内怎么点最饱」核心算法(MCP 与页面共用)
 │   ├── mcp_server.py          本地 MCP Server(5 个工具, 零 Token)
