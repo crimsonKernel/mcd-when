@@ -36,6 +36,15 @@
 
 ![桌面端实拍](images/usage-desktop.png)
 
+三页站点 —— 问答页（含「当主食」锁定）：
+
+![问答页](images/page-index.png)
+
+全国榜单页与方法页：
+
+![全国榜单](images/page-rank.png)
+![方法与合规](images/page-how.png)
+
 </details>
 
 ---
@@ -104,8 +113,8 @@
 
 **所有价格均来自 `calculate-price` 实时核价, 未经任何模型估算, 未产生任何真实订单。**
 
-- 在线查你自己的城市(无需 Token): **<https://mcd-when.app.workbuddy.host/>**
-- 离线版: [dist/report.html](dist/report.html)(双击即开, 完全自包含)
+- 在线查你自己的城市(无需 Token): **<https://mcd-when.app.workbuddy.host/>**（问答 / 全国榜单 / 方法与合规 三页）
+- 离线版: [dist/report.html](dist/report.html)(双击即开, 完全自包含, 断网也能用)
 
 ## 它在回答什么问题
 
@@ -136,7 +145,8 @@
 
 ## 部署到你自己的 GitHub（GitHub Pages）
 
-报告是**单一静态 HTML**，仓库里已经带好了 Pages 工作流（`.github/workflows/pages.yml`），
+站点是**三页静态 HTML**（问答 / 全国榜单 / 方法与合规，共享一份 `mcd-data.js`），
+仓库里已经带好了 Pages 工作流（`.github/workflows/pages.yml`），
 推送即上线，不用手工传文件：
 
 ```bash
@@ -147,9 +157,12 @@ git clone <你的仓库地址> mcd-when && cd mcd-when
 
 地址形如：`https://<你的用户名>.github.io/mcd-when/`，根路径就是问答页。
 
-> 单文件自包含，没有构建步骤、没有依赖、不需要装东西。
+> 没有构建步骤、没有依赖、不需要装东西。
 > 想完全手动也行：`python src/render_report.py` 重新渲染后，
-> `cp dist/report.html index.html` 再推一次。
+> `cp dist/index.html dist/rank.html dist/how.html dist/mcd-data.js <你的站点目录>/`。
+>
+> 另有一份**单文件离线版** `dist/report.html`：数据全部内联，双击即开、
+> 断网也能用，导航里也能下载到（「离线单文件版 ↓」）。
 
 ## 用起来（按门槛从低到高）
 
@@ -207,7 +220,8 @@ python src/survey.py --city 上海                    # 老脚本: 全时刻地�
 #### 5. 渲染报告
 
 ```bash
-python src/render_report.py    # -> dist/report.html (问答式, 双击即开)
+python src/render_report.py    # -> dist/{index,rank,how}.html + mcd-data.js
+                              #    + dist/report.html (单文件离线版)
 python src/render_card.py      # -> dist/card.html   (README 首图源)
 ```
 
@@ -267,11 +281,11 @@ python src/now.py --city 上海
 ## 自检
 
 ```bash
-python -m unittest discover tests           # 34 项冒烟测试(数据/分类/算法/产物, 零依赖)
-python src/render_report.py                 # 渲染报告(含内联脚本语法自检, 挂了会让构建失败)
+python -m unittest discover tests           # 40 项冒烟测试(数据/分类/算法/产物, 零依赖)
+python src/render_report.py                 # 渲染四产物(含 5 个文件的脚本语法自检, 挂了构建失败)
 python src/parity_combo.py                  # 页面 JS 背包 vs Python 背包逐分对拍(207 例)
-python src/check_layout.py                  # 四视口零溢出体检
-python src/check_combo.py                   # 预算搭配器实测(无头浏览器, 9 条交互路径)
+python src/check_layout.py                  # 四页面 × 四视口零溢出体检
+python src/check_combo.py                   # 预算搭配器实测(单文件 + 三页两入口, 各 10 条路径)
 ```
 
 ## 参与方式
@@ -320,15 +334,16 @@ mcd-when/
 │   ├── analyze_surface.py     验证「价格全天恒定」等关键假设
 │   ├── analyze_national.py    全国结论汇总(开档时间/价差/异常值)
 │   ├── now.py                 此刻决策(当前最便宜/下一档倒计时)
-│   ├── render_report.py       渲染问答式报告 HTML(全国版, 嵌完整菜单)
+│   ├── render_report.py       渲染三页版站点 + 单文件离线版(含脚本语法自检)
 │   ├── render_card.py         渲染 README 首图(dist/card.html)
-│   ├── check_layout.py        排版零溢出体检(四视口自动检测)
-│   ├── check_combo.py         预算搭配器实测(无头浏览器走 9 条交互路径)
+│   ├── check_layout.py        排版零溢出体检(四页面 × 四视口自动检测)
+│   ├── check_combo.py         预算搭配器实测(无头浏览器, 两个入口 × 10 条路径)
 │   ├── parity_combo.py        页面 JS 背包 vs Python 背包逐分对拍(207 例)
 │   ├── combo.py               「预算内怎么点最饱」核心算法(MCP 与页面共用)
 │   ├── mcp_server.py          本地 MCP Server(5 个工具, 零 Token)
 │   └── make_demo.py           演示数据生成(仅预览 UI)
 ├── data/                      价格表 / 城市探测 / 工具 schema
 ├── images/                    README 首图 + 实拍截图
-└── dist/                      report.html(交互报告) / card.html(首图源)
+└── dist/                      index/rank/how.html(三页版) + mcd-data.js(共享数据)
+                               + report.html(单文件离线版) + card.html(首图源)
 ```

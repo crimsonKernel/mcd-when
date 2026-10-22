@@ -4,15 +4,18 @@ check_layout.py 只管「有没有溢出」, 不管「交互是不是坏的」�
 预算搭配器是纯前端逻辑(查表 + 渲染), 光看 HTML 源码证明不了它能跑,
 所以照它的办法: 注入一段脚本, 用 Chrome headless 加载, 把结果写进 <title> 带出来。
 
-验八件事:
+验十件事(对两个入口各跑一遍 —— 单文件离线版 report.html 和三页版 index.html,
+后者靠 <script src="mcd-data.js"> 供数, 路径解析也要验):
   1. 页面加载无 JS 报错(有错则 title 里带 ERROR:)
   2. 选好城市后, 预算搭配器默认就渲染出答案(不是空白的)
   3. 点 ¥50 chip / 填自定义金额 ¥23 两条路径都对
   4. 预算不足(¥6)时诚实告知「吃不到一顿正经饭」并说清还差多少
-  5. 点菜单表「当主食」后, 搭配器锁定该主食(锚点必选)
+  5. 点菜单表「当主食」后, 搭配器锁定该主食(锚点必选, 真的出现在结果里)
   6. 点「(换一件)」解锁, 恢复自由搭配
   7. 菜单表按主食/小食过滤, 每一行分类都对
   8. 菜单表按名称排序, 行序正确
+  9. 每次渲染都没有 undefined / NaN(结构不一致曾让整行变 undefined)
+ 10. 两个入口结果一致
 
 用法: python src/check_combo.py
 """
@@ -26,7 +29,9 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REPORT = ROOT / "dist" / "report.html"
+DIST = ROOT / "dist"
+# 单文件离线版 + 三页版问答页(数据走外链 mcd-data.js)
+TARGETS = ["report.html", "index.html"]
 
 CHROME_CANDIDATES = [
     Path("C:/Program Files/Google/Chrome/Application/chrome.exe"),
@@ -173,27 +178,35 @@ def main() -> int:
     if exe is None:
         print("找不到 Chrome/Edge, 跳过实测")
         return 1
-    if not REPORT.exists():
-        print(f"缺少 {REPORT}, 先跑 src/render_report.py")
+    missing = [t for t in TARGETS if not (DIST / t).exists()]
+    if missing:
+        print(f"缺少 {', '.join(missing)}, 先跑 src/render_report.py")
         return 1
 
-    html = REPORT.read_text(encoding="utf-8")
-    tmp = Path(tempfile.mkdtemp()) / "probe.html"
-    tmp.write_text(html.replace("</body>", PROBE + "</body>"), encoding="utf-8")
-
-    r = subprocess.run(
-        [str(exe), "--headless", "--disable-gpu", "--no-sandbox",
-         "--virtual-time-budget=4000", "--dump-dom",
-         f"file:///{tmp.as_posix()}"],
-        capture_output=True, text=True, timeout=90,
-    )
-    m = re.search(r"<title>(.*?)</title>", r.stdout, re.S)
-    title = (m.group(1).strip() if m else "")
-    print("实测结果:", title or "(未取到 title)")
-    ok = ("PROBE" in title) and "ERROR" not in title and "BAD" not in title \
-        and "EX" not in title and "EMPTY" not in title and "NO_" not in title
-    print("结论:", "通过" if ok else "有问题, 需要看")
-    return 0 if ok else 1
+    all_ok = True
+    for target in TARGETS:
+        html = (DIST / target).read_text(encoding="utf-8")
+        # 探测文件落在 dist/ 里, <script src="mcd-data.js"> 才能解析到
+        probe = DIST / f".probe-{target}"
+        probe.write_text(html.replace("</body>", PROBE + "</body>"),
+                         encoding="utf-8")
+        try:
+            r = subprocess.run(
+                [str(exe), "--headless", "--disable-gpu", "--no-sandbox",
+                 "--virtual-time-budget=6000", "--dump-dom",
+                 probe.as_uri()],
+                capture_output=True, text=True, timeout=120,
+            )
+        finally:
+            probe.unlink(missing_ok=True)
+        m = re.search(r"<title>(.*?)</title>", r.stdout, re.S)
+        title = (m.group(1).strip() if m else "")
+        print(f"[{target}] {title or '(未取到 title)'}")
+        ok = ("PROBE" in title) and "ERROR" not in title and "BAD" not in title \
+            and "EX" not in title and "EMPTY" not in title and "NO_" not in title
+        print(f"[{target}] 结论:", "通过" if ok else "有问题, 需要看")
+        all_ok = all_ok and ok
+    return 0 if all_ok else 1
 
 
 if __name__ == "__main__":

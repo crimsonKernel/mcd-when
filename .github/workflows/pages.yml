@@ -24,14 +24,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # dist/report.html 是自包含单文件; 另存一份为 index.html,
-      # 这样 https://<user>.github.io/mcd-when/ 根路径直接就是问答页,
-      # 评委不必猜文件名。
+      # 三页版: index(问答) / rank(全国榜单) / how(方法与合规) +
+      # 共享数据 mcd-data.js + 单文件离线版 report.html(导航里可下载)。
+      # 根路径直接就是问答页, 评委不必猜文件名。
       - name: 整理站点目录
         run: |
           mkdir -p _site
-          cp dist/report.html _site/index.html
-          cp dist/card.html _site/card.html
+          cp dist/index.html dist/rank.html dist/how.html _site/
+          cp dist/mcd-data.js dist/report.html dist/card.html _site/
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -1,10 +1,13 @@
 """check_layout.py — 排版零溢出体检(窄屏错乱的根治办法是"先测再发")
 
-做法: 复制一份 dist/report.html, 在末尾注入一段体检脚本, 用 Chrome headless
-按四个视口加载它, 脚本把溢出元素写进 <title>, --dump-dom 把 title 带出来。
+做法: 把页面复制一份到 dist/ 里(保证 <script src="mcd-data.js"> 能解析),
+在末尾注入一段体检脚本, 用 Chrome headless 按四个视口加载它,
+脚本把溢出元素写进 <title>, --dump-dom 把 title 带出来。
 
 为什么要注入而不是眼看: 折叠区(details)里藏着的宽表格, 即使收起也会参与布局,
 肉眼看不出, 手机一打开就横向滚动 —— 上一版就是这么翻车的。
+
+三页版(index/rank/how) + 单文件离线版(report.html)都要查。
 
 用法: python src/check_layout.py
 """
@@ -12,14 +15,13 @@
 from __future__ import annotations
 
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REPORT = ROOT / "dist" / "report.html"
+DIST = ROOT / "dist"
+TARGETS = ["index.html", "rank.html", "how.html", "report.html"]
 
 CHROME_CANDIDATES = [
     Path("C:/Program Files/Google/Chrome/Application/chrome.exe"),
@@ -78,40 +80,44 @@ def find_chrome() -> Path | None:
 
 
 def main() -> int:
-    if not REPORT.exists():
-        print(f"未找到 {REPORT}, 先跑 render_report.py")
+    missing = [t for t in TARGETS if not (DIST / t).exists()]
+    if missing:
+        print(f"未找到 {', '.join(missing)}, 先跑 render_report.py")
         return 1
     chrome = find_chrome()
     if not chrome:
         print("未找到 Chrome/Edge。")
         return 1
 
-    html = REPORT.read_text(encoding="utf-8")
-    tmpdir = Path(tempfile.mkdtemp(prefix="mcdwhen_layout_"))
-    probe = tmpdir / "check.html"
-    probe.write_text(html.replace("</body>", PROBE + "</body>"), encoding="utf-8")
-
     ok_all = True
-    for name, w, h, scale in VIEWPORTS:
-        cmd = [
-            str(chrome), "--headless=new", "--disable-gpu", "--no-sandbox",
-            f"--window-size={w},{h}", f"--force-device-scale-factor={scale}",
-            "--virtual-time-budget=4000", "--dump-dom", probe.as_uri(),
-        ]
+    for target in TARGETS:
+        html = (DIST / target).read_text(encoding="utf-8")
+        probe = DIST / f".probe-{target}"
+        probe.write_text(html.replace("</body>", PROBE + "</body>"),
+                         encoding="utf-8")
         try:
-            out = subprocess.run(cmd, capture_output=True, text=True, timeout=90).stdout
-        except subprocess.TimeoutExpired:
-            print(f"[{name}] 超时")
-            ok_all = False
-            continue
-        m = re.search(r"<title>(.*?)</title>", out, re.S)
-        title = m.group(1).strip() if m else "(未取到 title)"
-        if title == "OK":
-            print(f"[{name}] ✓ 无横向溢出")
-        else:
-            ok_all = False
-            print(f"[{name}] ✗ {title[:300]}")
-    shutil.rmtree(tmpdir, ignore_errors=True)
+            for name, w, h, scale in VIEWPORTS:
+                cmd = [
+                    str(chrome), "--headless=new", "--disable-gpu", "--no-sandbox",
+                    f"--window-size={w},{h}", f"--force-device-scale-factor={scale}",
+                    "--virtual-time-budget=4000", "--dump-dom", probe.as_uri(),
+                ]
+                try:
+                    out = subprocess.run(cmd, capture_output=True, text=True,
+                                         timeout=90).stdout
+                except subprocess.TimeoutExpired:
+                    print(f"[{target} · {name}] 超时")
+                    ok_all = False
+                    continue
+                m = re.search(r"<title>(.*?)</title>", out, re.S)
+                title = m.group(1).strip() if m else "(未取到 title)"
+                if title == "OK":
+                    print(f"[{target} · {name}] ✓ 无横向溢出")
+                else:
+                    ok_all = False
+                    print(f"[{target} · {name}] ✗ {title[:300]}")
+        finally:
+            probe.unlink(missing_ok=True)
     print("\n结论:", "全部视口通过" if ok_all else "存在溢出, 需要修")
     return 0 if ok_all else 1
 

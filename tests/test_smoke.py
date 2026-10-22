@@ -111,20 +111,69 @@ class TestDataFiles(unittest.TestCase):
         self.assertTrue(len(json.dumps(d)) > 1000)
 
 
-class TestRenderedReport(unittest.TestCase):
-    def test_report_is_self_contained(self):
-        p = os.path.join(ROOT, "dist", "report.html")
+class TestRenderedSite(unittest.TestCase):
+    """三页版 + 单文件离线版的产物结构(未渲染则跳过)。"""
+
+    def _read(self, name):
+        p = os.path.join(ROOT, "dist", name)
         if not os.path.exists(p):
-            self.skipTest("未渲染报告")
+            self.skipTest(f"未渲染 {name}")
         with open(p, encoding="utf-8") as f:
-            html = f.read()
+            return f.read()
+
+    def test_single_file_is_self_contained(self):
+        html = self._read("report.html")
+        # 单文件版: 数据内联, 不依赖任何外链脚本 —— 双击即开的前提
         self.assertIn("window.__MCD_DATA__", html)
+        self.assertNotIn('src="mcd-data.js"', html)
         self.assertIn('id="provSel"', html)
         self.assertIn('id="citySel"', html)
         self.assertIn("anshero", html)
         self.assertIn("prefers-color-scheme", html)
-        # 不得残留未替换模板占位符
-        self.assertNotIn("{{", html)
+        self.assertNotIn("{{", html)          # 不得残留未替换模板占位符
+
+    def test_index_uses_shared_data(self):
+        html = self._read("index.html")
+        self.assertIn('src="mcd-data.js"', html)   # 三页版走外链数据
+        self.assertNotIn("window.__MCD_DATA__ =", html)
+        self.assertIn('id="provSel"', html)
+        self.assertIn('id="ans"', html)
+        self.assertIn('class="nav"', html)
+
+    def test_rank_page_is_static_with_deep_links(self):
+        html = self._read("rank.html")
+        self.assertNotIn("<script", html)           # 纯静态, 零 JS
+        self.assertIn("全国榜单", html)
+        self.assertIn("早餐开得最早的城市", html)
+        self.assertIn("午餐最便宜的城市", html)
+        # 城市 chips 是深链: 点下去带着 ?city= 去问答页
+        self.assertIn('href="index.html?city=', html)
+
+    def test_how_page_covers_method_and_compliance(self):
+        html = self._read("how.html")
+        self.assertIn("这些数字是怎么来的", html)
+        self.assertIn("合规声明", html)
+        self.assertIn("非麦当劳官方产品", html)
+        self.assertIn("parity_combo.py", html)
+
+    def test_data_js_is_valid_assignment(self):
+        import json
+        src = self._read("mcd-data.js")
+        self.assertTrue(src.startswith("window.__MCD_DATA__ = "))
+        payload = src[len("window.__MCD_DATA__ = "):].rstrip().rstrip(";")
+        d = json.loads(payload)
+        self.assertIn("cities", d)
+        self.assertIn("mn", d)
+        self.assertGreater(len(d["cities"]), 300)
+        self.assertGreater(len(d["mn"]), 200)
+
+    def test_nav_links_all_pages(self):
+        for page in ["index.html", "rank.html", "how.html", "report.html"]:
+            html = self._read(page)
+            self.assertIn('class="nav"', html, page)
+            self.assertIn("问答", html, page)
+            self.assertIn("全国榜单", html, page)
+            self.assertIn("方法与合规", html, page)
 
 
 if __name__ == "__main__":

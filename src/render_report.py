@@ -21,12 +21,14 @@ import json
 from datetime import datetime
 from html import escape
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
 SURFACE_PATH = ROOT / "data" / "surface_national.json"
 BATCH_PATH = ROOT / "data" / "surface_batch.json"
 LEGACY_PATH = ROOT / "data" / "surface.json"
-OUT_PATH = ROOT / "dist" / "report.html"
+OUT_DIR = ROOT / "dist"
+OUT_PATH = OUT_DIR / "report.html"
 
 # 全菜单采集(survey_batch.py)覆盖到这个城市数就优先用它渲染 ——
 # 它比探针快照多出完整菜单, 且口径与 MCP Server 一致。
@@ -37,6 +39,22 @@ HOT_CITIES = ["北京", "上海", "广州", "深圳", "成都", "重庆", "武�
 
 PERIOD_ICON = {"早餐": "🌅", "午餐": "🍔", "下午茶": "🍰", "夜市": "🌙"}
 
+# 单文件离线版专用: 城市名单里的 chips 也能点(静态区复用 __pickCity)。
+# 三页版的榜单页 chips 是深链, 不需要这段。
+CHIPS_SCRIPT = """
+<script>
+(function(){
+  var nodes = document.querySelectorAll(".citylist .chip");
+  for (var i = 0; i < nodes.length; i++) {
+    nodes[i].onclick = function () {
+      window.__pickCity(this.getAttribute("data-c"));
+      window.scrollTo(0, 0);
+    };
+  }
+})();
+</script>
+"""
+
 CSS = """
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -46,6 +64,18 @@ body{margin:0;background:#FBF7F2;color:#1f2329;
  font-size:16px;line-height:1.7;padding:20px 14px 40px;
  word-break:break-word;overflow-wrap:break-word}
 .wrap{max-width:820px;margin:0 auto}
+
+/* —— 顶部导航(三页版) —— */
+.nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 14px;
+ padding:8px 10px;background:#fff;border:1px solid #e3e6ec;border-radius:14px;
+ box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.nav .brand{font-weight:800;color:#7C1D12;font-size:14.5px;margin-right:6px;
+ white-space:nowrap}
+.nav a{display:inline-block;padding:6px 13px;border-radius:999px;font-size:14px;
+ font-weight:700;color:#6B5747;text-decoration:none}
+.nav a:hover{background:#FDF1E3;color:#B4531A}
+.nav a.on{background:#C2410C;color:#fff}
+.nav .dl{margin-left:auto;font-size:13px;font-weight:700;color:#8C2F0B}
 
 /* —— 头部: 黄金3秒钩子(暖奶油) —— */
 .hero{background:linear-gradient(135deg,#FFFDF9 0%,#FDF1E3 100%);
@@ -1223,8 +1253,12 @@ def national_overview(cities: list[dict]) -> str:
     return "".join(out)
 
 
-def all_cities_block(cities: list[dict]) -> str:
-    """按大区分组的完整城市列表(找不到自己城市时的兜底入口)。"""
+def all_cities_block(cities: list[dict], href_prefix: str = "") -> str:
+    """按大区分组的完整城市列表(找不到自己城市时的兜底入口)。
+
+    href_prefix 非空时(三页版), chips 是深链 —— 点下去直接带着
+    ?city= 跳到问答页; 为空时(单文件版)是 span, 由页内 __pickCity 接管。
+    """
     groups: dict[str, list[str]] = {}
     for c in cities:
         groups.setdefault(c.get("region") or "其他", []).append(c["city"])
@@ -1232,8 +1266,13 @@ def all_cities_block(cities: list[dict]) -> str:
     for region in ["华北", "东北", "华东", "华中", "华南", "西南", "西北", "其他"]:
         if region not in groups:
             continue
-        chips = "".join(f'<span class="chip" data-c="{escape(x)}">{escape(x)}</span>'
-                        for x in groups[region])
+        if href_prefix:
+            chips = "".join(
+                f'<a class="chip" href="{href_prefix}?city={quote(x)}">{escape(x)}</a>'
+                for x in groups[region])
+        else:
+            chips = "".join(f'<span class="chip" data-c="{escape(x)}">{escape(x)}</span>'
+                            for x in groups[region])
         out.append(f"<h3>{escape(region)}（{len(groups[region])} 座）</h3>"
                    f'<div class="chips citylist">{chips}</div>')
     return "".join(out)
@@ -1315,7 +1354,6 @@ def main() -> int:
     target = escape(str(surface.get("targetDate", "")))
     hf = hero_facts(cities_raw)
     overview = national_overview(cities_raw)
-    citylist = all_cities_block(cities_raw)
 
     # JS 失效时的静态兜底答案
     fb = data[0]
@@ -1338,27 +1376,64 @@ def main() -> int:
             f'<p class="more">想查别的城市和时刻，需要浏览器开启 JavaScript；'
             f'否则可以展开下面的全国对比和城市列表查看。</p></div>')
 
-    html = f"""<!DOCTYPE html>
+    # —— 可组合区块: 三页版与单文件版共用同一批片段, 保证两边不漂移 ——
+    def hero(hook: str, h1: str, hsub: str, stats: list[str]) -> str:
+        st = "".join(f'<span class="hs">{s}</span>' for s in stats)
+        return (f'<header class="hero"><p class="hook">{hook}</p><h1>{h1}</h1>'
+                f'<p class="hsub">{hsub}</p>'
+                f'<div class="hero-stats">{st}</div></header>')
+
+    def nav(active: str, single: bool = False) -> str:
+        """三页版导航; single=True(单文件离线版)时换成页内锚点。"""
+        def href(k: str) -> str:
+            if single:
+                return {"answer": "#sec-answer", "rank": "#sec-rank",
+                        "how": "#sec-how"}[k]
+            return {"answer": "index.html", "rank": "rank.html",
+                    "how": "how.html"}[k]
+        links = "".join(
+            f'<a href="{href(k)}"' + (' class="on"' if k == active else "")
+            + f">{t}</a>"
+            for k, t in [("answer", "问答"), ("rank", "全国榜单"),
+                         ("how", "方法与合规")])
+        dl = ("" if single else
+              '<a class="dl" href="report.html" download>离线单文件版 ↓</a>')
+        return (f'<nav class="nav"><span class="brand">🍔 麦当劳几点最便宜</span>'
+                f"{links}{dl}</nav>")
+
+    def shell(title: str, nav_html: str, body: str,
+              data_tag: str, scripts: str = "") -> str:
+        return f"""<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>麦当劳几点最便宜 · 全国 {n_cities} 城，选城市和时刻直接给答案</title>
+<title>{title}</title>
 <style>{CSS}</style></head><body>
 <div class="wrap">
-<header class="hero">
-  <p class="hook">同一家麦当劳，换个时段最便宜能差 ¥{hf['gap'] / 100:.2f}</p>
-  <h1>麦当劳几点最便宜</h1>
-  <p class="hsub">{hf['gap_city']}早餐最便宜一餐 ¥{hf['gap_bf'] / 100:.2f}，同一个午餐档就要 ¥{hf['gap_lf'] / 100:.2f}。
-  全国 {hf['bf_n']} 座城早餐有正餐地板价、中位 ¥{hf['bf_med'] / 100:.2f}，午餐中位 ¥{hf['lf_med'] / 100:.2f}。
-  选<b>城市</b>、选<b>几点去</b>，直接告诉你<b>那一刻最便宜能吃什么、多少钱</b>。</p>
-  <div class="hero-stats">
-    <span class="hs"><b>{n_cities}</b>座城市</span>
-    <span class="hs"><b>{n_calls}</b>次真实问价</span>
-    <span class="hs">早餐地板价中位 <b>¥9.90</b></span>
-    <span class="hs">不用注册 · 手机直接看</span>
-  </div>
-</header>
+{nav_html}
+{body}
+{foot}
+</div>
+{data_tag}
+{scripts}
+</body></html>"""
 
-<div class="q">
+    foot = (f"<footer>生成时间 {gen} · 数据日期 {target} · 覆盖 {n_cities} 座城市 · "
+            f"共 {n_calls} 次问价 · 取餐方式：到店自提（部分城市含得来速）<br>"
+            f"样本为该城市门店中的一家，同城市不同门店的营业时间可能有差异。"
+            f"本项目为 2026 麦当劳程序员创意开发大赛参赛作品，非麦当劳官方产品。"
+            f"价格随门店与日期变动，下单前请以麦当劳 App 实际显示为准。</footer>")
+
+    hero_answer = hero(
+        f"同一家麦当劳，换个时段最便宜能差 ¥{hf['gap'] / 100:.2f}",
+        "麦当劳几点最便宜",
+        f"{hf['gap_city']}早餐最便宜一餐 ¥{hf['gap_bf'] / 100:.2f}，同一个午餐档就要 "
+        f"¥{hf['gap_lf'] / 100:.2f}。全国 {hf['bf_n']} 座城早餐有正餐地板价、中位 "
+        f"¥{hf['bf_med'] / 100:.2f}，午餐中位 ¥{hf['lf_med'] / 100:.2f}。"
+        f"选<b>城市</b>、选<b>几点去</b>，直接告诉你<b>那一刻最便宜能吃什么、多少钱</b>。",
+        [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",
+         "早餐地板价中位 <b>¥9.90</b>", "不用注册 · 手机直接看"])
+
+    q_widget = """<div class="q">
   <div class="qrow">
     <span class="qlab"><span class="qnum">1</span>你在哪座城市</span>
     <div class="selrow">
@@ -1371,7 +1446,7 @@ def main() -> int:
         <select class="sel" id="citySel"></select>
       </div>
     </div>
-    <p class="qhint">没找到你的城市？往下翻到最后一段「城市名单」。</p>
+    <p class="qhint">没找到你的城市？去<a href="rank.html">全国榜单</a>页翻城市名单。</p>
     <div id="suggest"></div>
   </div>
   <div class="qrow">
@@ -1387,77 +1462,156 @@ def main() -> int:
       <button class="now" id="nowbtn" type="button">就用现在这个时间</button>
     </div>
   </div>
-</div>
+</div>"""
 
-<div id="ans">{fallback}</div>
-
-<details><summary>看看全国：哪里早餐开得早、哪里午餐最便宜</summary>
-<div class="dbody">{overview}</div></details>
-
-<details><summary>全国 {n_cities} 座城市名单</summary>
-<div class="dbody">{citylist}</div></details>
-
-<details><summary>这些数字是怎么来的？</summary><div class="dbody">
-<p>价格不是估的。程序对每座城市的样本门店，按<b>官方时段</b>（早餐/午餐/下午茶/夜市）
+    method_body = f"""
+<div class="card">
+<p class="big" style="margin-top:0">价格不是估的</p>
+<p>程序对每座城市的样本门店，按<b>官方时段</b>（早餐/午餐/下午茶/夜市）
 逐个向麦当劳订餐系统问价，相当于在 App 里选好商品、选好取餐时间后看到的实付金额，
-问回来的数字原样记下。这一版一共问价 <b>{n_calls}</b> 次。</p>
+问回来的数字原样记下。这一版一共问价 <b>{n_calls}</b> 次，覆盖 <b>{n_cities}</b> 座城市。</p>
+<p class="big">为什么按档问价就够</p>
 <p>先做了一次实测：同一商品在一天之内价格恒定，变化的是「这个时段卖不卖」。
 所以按档问价即可覆盖全天，不必逐分钟地毯式轰炸。</p>
-<p>整条链路是<b>只读</b>的：只问价，不下单、不领券、不碰支付环节。</p>
-<p>时段边界（早餐/午餐/下午茶/夜市各自的起止时刻）取自门店返回的排期，不是我们自己划的。
-不同城市开门时间不同，开档时刻能差 4 个小时。</p>
-<p class="sub">技术实现与复现方式见仓库 <code>MCP_INTEGRATION.md</code>。</p>
-</div></details>
+<p class="big">时段边界不是我们划的</p>
+<p>早餐/午餐/下午茶/夜市各自的起止时刻取自门店返回的排期。不同城市开门时间不同，
+开档时刻能差 4 个小时。</p>
+<p class="big">「¥__ 能吃到最饱的」是怎么算的</p>
+<p>0/1 背包在完整在售菜单上现算：<b>有主食是硬门槛</b>，不是优先级 ——
+预算装不下主食时，宁可告诉你「吃不到一顿正经饭，最便宜的一餐 ¥13.90，还差 ¥3.90」，
+也不拿两个冰淇淋凑数。你也可以点菜单里任一行的「当主食」，你选的那件必选进搭配。</p>
+<p>同一个算法只有一份实现（<code>src/combo.py</code>）：网页端算的和 MCP 客户端问回来的
+逐分一致，<code>src/parity_combo.py</code> 把页面里的 JS 抠出来逐分对拍（207 个用例零不一致）。</p>
+<p class="big">整条链路是只读的</p>
+<p>只问价，不下单、不领券、不碰支付环节；不采集任何个人凭证，
+Token 只走环境变量。外送价依赖个人收货地址，属于用户私有配置，本项目不采集。</p>
+<p class="big">同样的能力，两种入口</p>
+<p>网页（零门槛，双击即开）+ 本地 MCP Server（5 个工具，零 Token，
+AI 客户端用自然语言问）。实时个性查询（「我这店此刻买得到什么」）需要你自己的 Token，
+脚本都在仓库里。</p>
+<p class="big">怎么复现</p>
+<pre style="white-space:pre-wrap">git clone https://github.com/crimsonKernel/mcd-when.git
+cd mcd-when
+python src/render_report.py        # 用仓库里的快照渲染页面
+python src/parity_combo.py         # JS 背包 vs Python 背包对拍
+python src/check_combo.py          # 无头浏览器走 10 条交互路径
+python -m unittest discover tests  # 35 项冒烟测试</pre>
+<p class="big">合规声明</p>
+<p>本项目为 2026 麦当劳程序员创意开发大赛参赛作品，<b>非麦当劳官方产品</b>，
+与麦当劳官方无隶属、背书或赞助关系；「麦当劳 / McDonald's」是各自持有人的商标。
+不含也不再分发任何麦当劳的 Logo、图片或商业素材。
+价格随门店与日期变动，下单前请以麦当劳 App 实际显示为准。</p>
+<p class="sub">技术实现与复现方式见仓库 <code>MCP_INTEGRATION.md</code>；
+参赛声明见 <code>CONTEST_DECLARATION.md</code>。</p>
+</div>"""
 
-<footer>
-生成时间 {gen} · 数据日期 {target} · 覆盖 {n_cities} 座城市 · 共 {n_calls} 次问价 ·
-取餐方式：到店自提（部分城市含得来速）<br>
-样本为该城市门店中的一家，同城市不同门店的营业时间可能有差异。
-本项目为 2026 麦当劳程序员创意开发大赛参赛作品，非麦当劳官方产品。
-价格随门店与日期变动，下单前请以麦当劳 App 实际显示为准。
-</footer>
-</div>
-<script>window.__MCD_DATA__ = {payload};</script>
-<script>{JS}</script>
-<script>
-// 城市名单里的 chips 也能点(静态区复用搜索逻辑)
-(function(){{
-  var nodes = document.querySelectorAll(".citylist .chip");
-  for (var i = 0; i < nodes.length; i++) {{
-    nodes[i].onclick = function () {{
-      window.__pickCity(this.getAttribute("data-c"));
-      window.scrollTo(0, 0);
-    }};
-  }}
-}})();
-</script>
-</body></html>"""
+    # ① 问答页(Pages 根路径)
+    index_html = shell(
+        f"麦当劳几点最便宜 · 全国 {n_cities} 城，选城市和时刻直接给答案",
+        nav("answer"),
+        hero_answer + f'<div id="sec-answer">{q_widget}</div>'
+        + f'<div id="ans">{fallback}</div>',
+        '<script src="mcd-data.js"></script>',
+        f"<script>{JS}</script>")
 
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(html, encoding="utf-8")
-    print(f"已生成 {OUT_PATH} ({OUT_PATH.stat().st_size // 1024} KB, {n_cities} 城, 双击即开)")
-    return check_inline_js(OUT_PATH)
+    # ② 全国榜单页(纯静态, 零 JS)
+    rank_hero = hero(
+        f"全国 {n_cities} 座城市、{n_calls} 次真实问价",
+        "全国榜单",
+        f"哪座城市早餐开得最早、哪座城市午餐最便宜、哪座城市吃早餐比午餐省得最多 —— "
+        f"全部是 {target} 这一天从麦当劳订餐系统问回来的实价，没有一个字是估的。"
+        f"点城市名，直接带着它去<a href=\"index.html\">问答页</a>查时刻。",
+        [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",
+         "按官方时段核价", "点城市名直接去查"])
+    rank_html = shell(
+        f"全国榜单 · 麦当劳几点最便宜（{n_cities} 城实测）",
+        nav("rank"),
+        rank_hero
+        + f'<div class="card"><p class="big" style="margin-top:0">全国对比</p>'
+          f"{overview}</div>"
+        + f'<div class="card"><p class="big" style="margin-top:0">'
+          f"全国 {n_cities} 座城市名单</p>"
+          f"{all_cities_block(cities_raw, href_prefix='index.html')}</div>",
+        "", "")
+
+    # ③ 方法与合规页(纯静态, 零 JS)
+    how_hero = hero(
+        "每一个数字都能复现",
+        "这些数字是怎么来的",
+        f"价格不是估的，是 {n_calls} 次真实问价问回来的；算法只有一份实现，"
+        f"网页和 MCP 两个入口逐分一致。这一页把方法、边界和合规都说清楚。",
+        [f"<b>{n_calls}</b>次真实问价", "链路只读",
+         "网页 / MCP 双入口", "参赛作品 · 非官方"])
+    how_html = shell(
+        "方法与合规 · 麦当劳几点最便宜",
+        nav("how"),
+        how_hero + method_body, "", "")
+
+    # ④ 单文件离线版(双击即开, 一切内嵌 —— 保持这个卖点不变)
+    single_html = shell(
+        f"麦当劳几点最便宜 · 全国 {n_cities} 城，选城市和时刻直接给答案",
+        nav("answer", single=True),
+        hero_answer + f'<div id="sec-answer">{q_widget}</div>'
+        + f'<div id="ans">{fallback}</div>'
+        + '<details id="sec-rank"><summary>看看全国：哪里早餐开得早、哪里午餐最便宜</summary>'
+          f'<div class="dbody">{overview}</div></details>'
+        + f'<details><summary>全国 {n_cities} 座城市名单</summary>'
+          f'<div class="dbody">{all_cities_block(cities_raw)}</div></details>'
+        + '<details id="sec-how"><summary>这些数字是怎么来的？</summary>'
+          f'<div class="dbody">{method_body}</div></details>',
+        f"<script>window.__MCD_DATA__ = {payload};</script>",
+        f"<script>{JS}</script>" + CHIPS_SCRIPT)
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    (OUT_DIR / "mcd-data.js").write_text(
+        "window.__MCD_DATA__ = " + payload + ";\n", encoding="utf-8")
+    outputs = {"index.html": index_html, "rank.html": rank_html,
+               "how.html": how_html, "report.html": single_html}
+    for name, content in outputs.items():
+        (OUT_DIR / name).write_text(content, encoding="utf-8")
+    for name in outputs:
+        p = OUT_DIR / name
+        print(f"已生成 {p.name} ({p.stat().st_size // 1024} KB)")
+    print(f"已生成 mcd-data.js ({(OUT_DIR / 'mcd-data.js').stat().st_size // 1024} KB)"
+          f" · {n_cities} 城 · 三页版 + 单文件离线版")
+
+    # 一次查完: 四个页面 + 外链数据(三页版靠 mcd-data.js 供数)
+    return check_inline_js(*[OUT_DIR / n for n in outputs],
+                           OUT_DIR / "mcd-data.js")
 
 
 NODE = "C:/Users/xueyihan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
 
 # 产物自检: 页面里任何一段内联脚本语法错误, 整站就白屏 —— 而且
 # 从 HTML 源码肉眼看不出来(Python 字符串把 \" 吃成 " 就会这样)。
+# 外链的 mcd-data.js 也要查(三页版靠它供数, 坏了页面同样全废)。
 # 所以渲染完必须用 node 逐块 new Function 校验, 有问题就让构建失败。
 JS_CHECK = r"""
 const fs = require('fs');
-const html = fs.readFileSync(process.argv[2], 'utf8');
-const blocks = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+function check(file, label) {
+  const src = fs.readFileSync(file, 'utf8');
+  const blocks = label === 'js'
+    ? [src]
+    : [...src.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  let bad = 0;
+  blocks.forEach((s, i) => {
+    try { new Function(s); }
+    catch (e) { bad++; console.log(label + ' 脚本块 ' + i + ' 语法错误: ' + e.message); }
+  });
+  return bad;
+}
 let bad = 0;
-blocks.forEach((s, i) => {
-  try { new Function(s); }
-  catch (e) { bad++; console.log('内联脚本块 ' + i + ' 语法错误: ' + e.message); }
-});
+for (let i = 2; i < process.argv.length; i++) {
+  const f = process.argv[i];
+  const label = f.endsWith('.js') ? 'js' : 'html';
+  const n = check(f, label);
+  if (n) { console.log('自检失败: ' + f); bad += n; }
+}
 process.exit(bad ? 1 : 0);
 """
 
 
-def check_inline_js(path: Path) -> int:
+def check_inline_js(*paths: Path) -> int:
     import subprocess
     import tempfile
 
@@ -1469,13 +1623,13 @@ def check_inline_js(path: Path) -> int:
         f.write(JS_CHECK)
         probe = f.name
     try:
-        r = subprocess.run([NODE, probe, str(path)], capture_output=True,
-                           text=True, timeout=60)
+        r = subprocess.run([NODE, probe, *[str(p) for p in paths]],
+                           capture_output=True, text=True, timeout=120)
         if r.returncode != 0:
             print(r.stdout.strip())
             print("自检失败: 页面脚本有语法错误, 这次渲染不可用")
             return 1
-        print("内联脚本语法自检通过")
+        print(f"脚本语法自检通过({len(paths)} 个文件)")
         return 0
     except subprocess.TimeoutExpired:
         print("警告: 语法自检超时, 跳过")
