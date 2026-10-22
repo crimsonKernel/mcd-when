@@ -87,6 +87,8 @@ body{margin:0;background:#FBF7F2;color:#1f2329;
 .hero h1{font-size:34px;line-height:1.25;margin:0 0 10px;color:#7C1D12;letter-spacing:-.4px}
 .hero .hsub{font-size:16px;color:#5A4638;margin:0 0 16px;line-height:1.65}
 .hero .hsub b{color:#B4531A}
+.hero .hsub2{display:block;margin-top:10px;font-size:13.5px;color:#7A6653}
+.hero .hsub2 a{color:#B4531A;text-decoration:underline}
 .hero-stats{display:flex;flex-wrap:wrap;gap:8px}
 .hero-stats .hs{background:#fff;border:1px solid #F0E2CE;
  border-radius:10px;padding:7px 12px;font-size:13.5px;color:#6B5747}
@@ -359,6 +361,8 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   .hero h1{color:#F7E3C9}
   .hero .hsub{color:#CBB79C}
   .hero .hsub b{color:#F5B45B}
+  .hero .hsub2{color:#B9A488}
+  .hero .hsub2 a{color:#F5B45B}
   .hero .hook{background:#3A2712;border-color:#6B4A1F;color:#F5B45B}
   .hero-stats .hs{background:#2A1D0F;border-color:#4A3418;color:#CBB79C}
   .hero-stats .hs b{color:#F5B45B}
@@ -1429,9 +1433,11 @@ def main() -> int:
         f"{hf['gap_city']}早餐最便宜一餐 ¥{hf['gap_bf'] / 100:.2f}，同一个午餐档就要 "
         f"¥{hf['gap_lf'] / 100:.2f}。全国 {hf['bf_n']} 座城早餐有正餐地板价、中位 "
         f"¥{hf['bf_med'] / 100:.2f}，午餐中位 ¥{hf['lf_med'] / 100:.2f}。"
-        f"选<b>城市</b>、选<b>几点去</b>，直接告诉你<b>那一刻最便宜能吃什么、多少钱</b>。",
+        f"选<b>城市</b>、选<b>几点去</b>，直接告诉你<b>那一刻最便宜能吃什么、多少钱</b>。<br>"
+        f"<span class=\"hsub2\">页面上的价格是 {target} 的实价快照（日内实测恒定）；"
+        f"想查此刻的实时价格，一条命令自己采 —— 见<a href=\"how.html\">方法与合规页</a>。</span>",
         [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",
-         "早餐地板价中位 <b>¥9.90</b>", "不用注册 · 手机直接看"])
+         f"数据日期 <b>{target}</b>", "不用注册 · 手机直接看"])
 
     q_widget = """<div class="q">
   <div class="qrow">
@@ -1489,13 +1495,33 @@ Token 只走环境变量。外送价依赖个人收货地址，属于用户私�
 <p>网页（零门槛，双击即开）+ 本地 MCP Server（5 个工具，零 Token，
 AI 客户端用自然语言问）。实时个性查询（「我这店此刻买得到什么」）需要你自己的 Token，
 脚本都在仓库里。</p>
+<p class="big">为什么网页是快照，不是实时</p>
+<p>采集这件事，我们最后交给了用户自己 —— 三个原因，每个都实测过：</p>
+<p><b>一、量级不允许。</b>实时回答「此刻最便宜」，每次查询都要把这座城的全菜单重问一遍
+（<code>now.py</code> 实测约 60 次调用）；官方限流 600 次/分钟/Token，
+而这一版全国普查一共问价 {n_calls} 次 —— 按上限满速也要 60 分钟不间断，
+还没算每次调用的网络往返。把这件事塞进每次页面打开：跑不动，也跑不起。</p>
+<p><b>二、浏览器进不了官方系统的门。</b>订餐接口不接受网页直连：
+带 Origin 的预检请求返回 403、响应里没有任何跨域许可头，WAF 直接把浏览器挡在门外。
+把个人 Token 塞进前端页面既不安全，也不是这个赛题鼓励的用法。</p>
+<p><b>三、快照在「今天」这个粒度上依然成立。</b>实测同一商品一天之内价格恒定，
+变的只是「这个时段卖不卖」；所以快照 + 时段结构，回答「今天几点去最便宜」没有失真。
+失真的是<b>日期</b>：页面上的价格是 {target} 问回来的，过几天再看，答案是那天的。
+真要查此刻，往下看一条命令。</p>
+<p class="big">想查此刻的实时价格？一条命令</p>
+<p>用自己的 Token 在本地跑，十几秒出结果，只读、不下单：</p>
+<pre style="white-space:pre-wrap">export MCD_MCP_TOKEN=你的token
+python src/now.py --city 上海        # 我这店此刻买得到什么、几块钱、下一档什么时候变</pre>
+<p>它会自动校时 → 找你附近门店 → 按<b>当前时段</b>问价并现算背包 → 再对比下一时段，
+全程只读。用法与字段含义见 <code>README.md</code> 与 <code>MCP_INTEGRATION.md</code>。
+网页负责「全天规律」，这条命令负责「我现在该怎么办」。</p>
 <p class="big">怎么复现</p>
 <pre style="white-space:pre-wrap">git clone https://github.com/crimsonKernel/mcd-when.git
 cd mcd-when
 python src/render_report.py        # 用仓库里的快照渲染页面
 python src/parity_combo.py         # JS 背包 vs Python 背包对拍
 python src/check_combo.py          # 无头浏览器走 10 条交互路径
-python -m unittest discover tests  # 35 项冒烟测试</pre>
+python -m unittest discover tests   # 41 项冒烟测试</pre>
 <p class="big">合规声明</p>
 <p>本项目为 2026 麦当劳程序员创意开发大赛参赛作品，<b>非麦当劳官方产品</b>，
 与麦当劳官方无隶属、背书或赞助关系；「麦当劳 / McDonald's」是各自持有人的商标。

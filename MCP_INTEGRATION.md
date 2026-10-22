@@ -56,6 +56,36 @@ data/surface_national.json → render_report.py → dist/report.html
 | `query-meal-detail` | 核对套餐组成, 保证跨时段可比; 也在商品可售时段内取准确名称 |
 | `tools/list`(discover.py) | 全量 35 个工具的 inputSchema 落盘, 官方未提供参数文档 |
 
+### 实时查询链路(now.py, 用户本机执行)
+
+```
+now-time-info                  校时: 以服务端时间为准
+      │
+query-nearby-stores            找附近门店 + 取官方时段表(当前在哪一档)
+      │
+query-meals(当前时段)          该档在售全量菜单
+      │
+calculate-price × 在售商品(≤24)  逐件核价, 现算背包
+      │
+query-meals(下一时段) × 12      下一档最便宜的一口, 给出「等不等」结论
+      ▼
+stdout / --json                当前档最便宜吃什么、几块钱、几分钟后变档
+```
+
+约 60 次只读调用, 几秒出结果; 用法 `python src/now.py --city 上海`。
+回答的是「我现在该怎么办」, 与全国矩阵的「全天规律」互补。
+
+### 为什么网页端是快照, 而不是实时
+
+| 原因 | 实测依据 |
+|---|---|
+| 量级 | 全国普查共 36200 次问价; 官方限流 600 次/分钟/Token, 满速也要 60 分钟以上。实时查询每次约 60 次调用, 交给每个访客的浏览器意味着不可控的并发 |
+| 跨域 | `curl -X OPTIONS https://mcp.mcd.cn` 带 `Origin` 与 `Access-Control-Request-*` 预检头 → **403 Forbidden**, 响应无 `access-control-allow-origin`。浏览器 JS 无法直连官方 MCP, 服务端代理又要求把用户 Token 托管给第三方 |
+| Token 安全 | 个人 Token 只能走环境变量; 放进前端页面等于公开 |
+| 快照仍成立 | 5 城 7000 点地毯式实测: 同一商品一天之内价格恒定。快照 + 时段结构回答「今天几点去最便宜」不失真, 失真的只是日期 —— 页面已标注数据日期 |
+
+因此实时采集由用户在本机用自己的 Token 完成(`src/now.py`), 仓库不托管任何凭证。
+
 ### 写操作处理原则
 
 `create-order` / `cancel-order` / `mall-create-order` / `auto-bind-coupons` /

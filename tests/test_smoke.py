@@ -156,6 +156,18 @@ class TestRenderedSite(unittest.TestCase):
         self.assertIn("非麦当劳官方产品", html)
         self.assertIn("parity_combo.py", html)
 
+    def test_snapshot_vs_live_is_explained(self):
+        """快照/实时的边界必须在页面上讲清楚, 且限流口径与 mcd_client 一致。"""
+        how = self._read("how.html")
+        self.assertIn("为什么网页是快照，不是实时", how)
+        self.assertIn("now.py --city", how)
+        self.assertIn("600 次/分钟", how)      # 与 src/mcd_client.py 同一口径
+        self.assertNotIn("600 次/3 小时", how)  # 旧口径写错窗口, 别再回来
+        # 问答页 hero 必须标出数据日期, 否则用户分不清答案是哪天的
+        idx = self._read("index.html")
+        self.assertIn("数据日期", idx)
+        self.assertIn("hsub2", idx)
+
     def test_data_js_is_valid_assignment(self):
         import json
         src = self._read("mcd-data.js")

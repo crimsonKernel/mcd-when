@@ -171,9 +171,23 @@ git clone <你的仓库地址> mcd-when && cd mcd-when
 | **打开网页**  | 所有人（推荐）     | 打开 <https://mcd-when.app.workbuddy.host/> → 选城市 → 选几点去 → 看答案，还能直接问「¥20 能吃到什么」。不用注册、不用装东西 |
 | **离线版**   | 没网也想查       | 下载 [dist/report.html](dist/report.html) 双击即开，功能完全一样                     |
 | **问 AI**  | 装了 Skill 的人 | 把 `skill/SKILL.md` 加进 AI 客户端，直接问「现在还买得到早餐吗」                             |
-| **自己跑数据** | 想跑自己城市的人    | 需要 MCP Token，见下方四步                                                      |
+| **自己跑数据** | 想跑自己城市的人    | 需要 MCP Token，见下方六步                                                      |
 
 ### 自己跑数据（跑你自己城市的门店）
+
+只想查「我现在这座店买得到什么、几块钱、下一档什么时候变」？一条命令，
+十几秒出结果，全程只读：
+
+```bash
+export MCD_MCP_TOKEN=你的token
+python src/now.py --city 上海
+```
+
+（网页上是 **2026-10-22 的实价快照**：日内实测价格恒定，快照 + 时段结构回答
+「今天几点去最便宜」不失真；但过几天打开，答案是那天的。实时查询交给用户本机，
+原因见[方法与合规页](dist/how.html)：官方限流 600 次/分钟/Token，而全国普查一共问价
+36200 次，满速也要连续跑 60 分钟以上；且订餐接口对浏览器跨域访问返回 403、
+Token 进前端既不安全也不合规。）
 
 #### 1. 申请 MCP Token
 
@@ -229,13 +243,10 @@ python src/render_card.py      # -> dist/card.html   (README 首图源)
   
 (页面会带「示例价格」徽标, 拿到真实数据后自动摘掉)。
 
-#### 6. 此刻决策(打开就能用的那一句)
+#### 6. 此刻决策的输出长什么样
 
-```bash
-python src/now.py --city 上海
-```
-
-真实输出(2026-10-20 10:58 实测):
+（命令就是上面那一句，加 `--json` 可以拿去接别的程序。）真实输出
+(2026-10-20 10:58 实测):
 
 ```text
 门店: 麦当劳上海闸北曲阜路大悦城餐厅(上海) · 服务端时间 10:58
@@ -281,7 +292,7 @@ python src/now.py --city 上海
 ## 自检
 
 ```bash
-python -m unittest discover tests           # 40 项冒烟测试(数据/分类/算法/产物, 零依赖)
+python -m unittest discover tests           # 41 项冒烟测试(数据/分类/算法/产物, 零依赖)
 python src/render_report.py                 # 渲染四产物(含 5 个文件的脚本语法自检, 挂了构建失败)
 python src/parity_combo.py                  # 页面 JS 背包 vs Python 背包逐分对拍(207 例)
 python src/check_layout.py                  # 四页面 × 四视口零溢出体检
