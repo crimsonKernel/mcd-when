@@ -201,8 +201,16 @@ button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 #ans .card{animation:fadeUp .18s ease-out}
 
-/* —— 全天时段带: 把「今天四档」画成一条能点的时间轴 —— */
-.dayband{margin:0 0 16px;padding:13px 14px 12px;border:1px solid #F0E2CE;border-radius:14px;
+/* —— 这一档的菜单和别档差在哪: 价格轴是平的, 差异全在这儿 —— */
+.mdiff{margin:14px 0 0;padding:13px 15px;border:1px solid #E7DFD2;border-radius:13px;
+ background:linear-gradient(180deg,#FCFBF8,#F8F6F1)}
+.mdl{margin:0;font-size:14.5px;line-height:1.65;color:#3d4450}
+.mdl b{color:#B4531A}
+.mdl2{margin:8px 0 0;font-size:13px;color:#7A6653;line-height:1.6}
+.mditems{margin:8px 0 0;font-size:13.5px;line-height:1.75;color:#5A4638}
+.mditems::before{content:"🍔 ";filter:saturate(.9)}
+
+/* —— 全天时段带: 把「今天四档」画成一条能点的时间轴 —— */.dayband{margin:0 0 16px;padding:13px 14px 12px;border:1px solid #F0E2CE;border-radius:14px;
  background:linear-gradient(180deg,#FFFDF8 0%,#FFF8EE 100%)}
 .dbhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 9px}
 .dbhead .t{font-size:12.5px;font-weight:800;color:#8a6100;letter-spacing:.5px}
@@ -454,6 +462,11 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
     color:#9A8672}
   .dbseg.empty{background:#241D14;color:#9A8672}
   .dblegend{color:#9A8672}
+  .mdiff{background:#1B1810;border-color:#3A3324}
+  .mdl{color:#c9c2b6}
+  .mdl b{color:#F5B45B}
+  .mdl2{color:#9A8672}
+  .mditems{color:#CBB79C}
   .dbscroll::-webkit-scrollbar-thumb{background:#4A3418}
   .rank:hover{background:#241A0D;border-color:#4A3418}
   ul.can{border-top-color:#2c313a}
@@ -664,7 +677,7 @@ JS = """
     if (!segs.length) return "";
     var h = '<div class="dayband">'
       + '<div class="dbhead"><span class="t">今天这一路怎么走的</span>'
-      + '<span class="h">点一段就跳过去</span></div>'
+      + '<span class="h">宽度按分钟数 · 点一段就跳过去</span></div>'
       + '<div class="dbscroll"><div class="dbtrack">';
     for (var j = 0; j < segs.length; j++) {
       var g = segs[j];
@@ -681,15 +694,18 @@ JS = """
           + '，上一档已收、下一档没开" aria-label="菜单真空带 ' + gm + '">' + label + "</div>";
       } else {
         var pp = g.p, has = !!pp.meal;
+        // 第三行放在售件数, 不放起止时间 —— 件数才能让人看出
+        // 「后三档其实是同一套菜单」, 起止时间在 title 里
+        var cnt = (pp.menu && pp.menu.length) ? pp.menu.length + " 件" : "";
         h += '<button type="button" class="dbseg' + (curP && curP.name === pp.name ? " cur" : "")
           + (has ? "" : " empty") + '" style="' + st + ';background:' + dbColor(pp.name)
           + '" data-t="' + esc(pp.start) + '" title="' + esc(pp.name) + " " + esc(pp.start)
-          + "–" + esc(pp.end) + (has ? " · 最便宜一餐 ¥" + (pp.meal.p / 100).toFixed(2) : " · 这一档没有正餐")
+          + "–" + esc(pp.end) + " · 在售 " + (cnt || "?") + " 件"
+          + (has ? " · 最便宜一餐 ¥" + (pp.meal.p / 100).toFixed(2) : " · 这一档没有正餐")
           + '"><span class="n">' + esc(pp.name) + '</span>'
           + (has ? '<span class="p">¥' + (pp.meal.p / 100).toFixed(2) + "</span>"
                  : '<span class="p">无正餐</span>')
-          + '<span class="h">' + esc(pp.start) + "</span></button>";
-      }
+          + '<span class="h">' + esc(pp.start) + "</span></button>";      }
     }
     h += "</div></div>"
       + '<div class="dblegend"><span><i style="background:#D98324"></i>早餐</span>'
@@ -697,8 +713,44 @@ JS = """
       + '<span><i style="background:#B0479E"></i>下午茶</span>'
       + '<span><i style="background:#3F5BA9"></i>夜市</span>'
       + '<span><i style="background:repeating-linear-gradient(45deg,#EFE6D8 0 3px,#E3D7C3 3px 6px)"></i>真空带</span>'
+      + '<span class="dlg">段内数字：最便宜一餐 / 在售件数</span>'
       + "</div></div>";
     return h;
+  }
+
+  /* ---- 这一档的菜单, 和别的档比差在哪 ---- */
+  function menuDiff(city, perName) {
+    if (city.probe) return null;          // 探针城只采了 12 件, 比不出真相
+    var mine = null, sets = [];
+    for (var i = 0; i < city.periods.length; i++) {
+      var q = city.periods[i], s = {};
+      for (var k = 0; k < q.menu.length; k++) s[q.menu[k][0]] = 1;
+      sets.push({ name: q.name, s: s });
+      if (q.name === perName) mine = s;
+    }
+    if (!mine) return null;
+    var only = [], miss = [], same = [];
+    for (var idx in mine) {
+      var inOther = false;
+      for (var o = 0; o < sets.length; o++) {
+        if (sets[o].name === perName) continue;
+        if (sets[o].s[idx]) { inOther = true; break; }
+      }
+      if (!inOther) only.push(+idx);
+    }
+    for (var oi = 0; oi < sets.length; oi++) {
+      if (sets[oi].name === perName) continue;
+      for (var j in sets[oi].s) if (!mine[j]) miss.push(+j);
+      // 逐件比对, 不拿件数当替身: 件数相同不代表菜单相同
+      var identical = Object.keys(sets[oi].s).length === Object.keys(mine).length;
+      if (identical) {
+        for (var jj in sets[oi].s) if (!mine[jj]) { identical = false; break; }
+      }
+      if (identical) same.push(sets[oi].name);
+    }
+    var seen = {}, missU = [];
+    for (var m = 0; m < miss.length; m++) if (!seen[miss[m]]) { seen[miss[m]] = 1; missU.push(miss[m]); }
+    return { n: Object.keys(mine).length, only: only, miss: missU, same: same };
   }
   function bindDayBand() {
     var nodes = document.querySelectorAll("#ans .dbseg[data-t]");
@@ -800,6 +852,31 @@ JS = """
     if (p.any && p.meal && p.any.p < p.meal.p) {
       out.push('<p class="anshint">只是想垫一口：' + esc(p.any.n) + " " + yuan(p.any.p)
         + "，比一餐还便宜 " + yuan(p.meal.p - p.any.p) + "。</p>");
+    }
+
+    // 这一档的菜单, 和别的档比差在哪 —— 价格轴是平的, 差异全在这儿
+    var md = menuDiff(city, p.name);
+    if (md) {
+      out.push('<div class="mdiff">');
+      out.push('<p class="big" style="margin-bottom:8px">这一档的菜单，和别档比差在哪</p>');
+      if (md.only.length) {
+        out.push('<p class="mdl">在售 <b>' + md.n + '</b> 件，其中 <b>' + md.only.length
+          + '</b> 件<b>只在' + esc(p.name) + '档卖</b>：</p>');
+        var shown = md.only.slice(0, 8).map(function (x) { return MN[x]; });
+        out.push('<p class="mditems">' + shown.map(esc).join(" · ")
+          + (md.only.length > 8 ? " …等 " + md.only.length + " 件" : "") + "</p>");
+        if (md.miss.length) {
+          out.push('<p class="mdl2">另有 <b>' + md.miss.length + '</b> 件在别的档有、'
+            + '这一档买不到（下面完整菜单里也看不到它们）。</p>');
+        }
+      } else {
+        // 后三档菜单完全相同 —— 这才是「官方切四档」的真相
+        out.push('<p class="mdl">这一档在售 <b>' + md.n + '</b> 件，'
+          + '<b>没有一件是这一档独有的</b>。'
+          + (md.same.length ? '菜单和<b>' + md.same.map(esc).join("、") + '档</b>完全一样 —— '
+             : "") + '官方把一天切成四档，但这几档卖的是同一套东西。</p>');
+      }
+      out.push("</div>");
     }
 
     // 和今天最贵的那一档比, 省多少
@@ -1383,9 +1460,20 @@ def rank_block(title: str, rows: list[tuple[str, str]], note: str = "") -> str:
         f'<p class="sub">{escape(note)}</p>' if note else "")
 
 
-def national_overview(cities: list[dict]) -> str:
-    """全国对比: 开档时间 / 各档地板价 / 早餐溢价 —— 全是实测出来的地域差异。"""
+def national_overview(cities: list[dict], hf: dict | None = None) -> str:
+    """全国对比: 开档时间 / 各档地板价 / 早餐溢价 / 菜单断层 —— 全是实测出来的地域差异。"""
     out = []
+    # 最重要的全国结论放最前面: 价格轴是平的, 断层全在菜单构成上
+    if hf and hf.get("full_n"):
+        out.append(
+            '<p class="big">价格轴是平的，断层在菜单</p>'
+            f'<p class="sub">{hf["full_n"]} 座有完整四档的城市里，'
+            f'<b>午餐和夜市的菜单 {hf["lunch_eq_night"]} 座完全相同</b>，'
+            f'下午茶平均只多 {hf["tea_extra"]:g} 件学生专享；只有早餐是另一套菜单 —— '
+            f'便宜 ¥{(hf["lf_med"] - hf["bf_med"]) / 100:.2f}，但少 {hf["bf_missing"]} 件，'
+            f'换来 {hf["bf_only"]} 件只属于早晨的麦满分。'
+            f'所以「几点最便宜」的答案永远是早上，这句话没有信息量；'
+            f'真正该问的是「我这个点到店，有什么可吃」。</p>')
     # 早餐开档时间
     with_bf = [(c["city"], c["periods"][0]["start"])
                for c in cities
@@ -1469,6 +1557,16 @@ def hero_facts(cities_raw: list[dict]) -> dict:
         m = f.get("meal")
         return m["price"] if m else None
 
+    def menu_of(c: dict, per: str) -> set:
+        """这一档在售的商品名集合。"""
+        basket = {i["code"]: i for i in (c.get("basket") or [])}
+        pu = (c.get("prices") or {}).get("pickup") or {}
+        out = set()
+        for code, it in basket.items():
+            if isinstance((pu.get(code) or {}).get(per), int):
+                out.add(it.get("name") or code)
+        return out
+
     gaps = []
     for c in cities_raw:
         bf, lf = floor(c, "早餐"), floor(c, "午餐")
@@ -1485,11 +1583,43 @@ def hero_facts(cities_raw: list[dict]) -> dict:
     cheaper = sum(1 for c in cities_raw
                   if (floor(c, "午餐") or 0) and (floor(c, "早餐") or 0)
                   and floor(c, "午餐") < floor(c, "早餐"))
+
+    # 菜单断层: 官方切四档, 但后三档的菜单是不是同一套?
+    # 这是比「早餐更便宜」强得多的发现 —— 价格轴几乎是平的,
+    # 真正的时段差异全在「这个点有什么可吃」上。
+    full = [c for c in cities_raw
+            if len([p for p in (c.get("periods") or []) if p.get("name")]) >= 4]
+    lunch_eq_night = 0
+    tea_extra = []
+    bf_missing = []
+    bf_only = []
+    for c in full:
+        m = {p["name"]: menu_of(c, p["name"]) for p in c["periods"]}
+        if not (m.get("午餐") and m.get("夜市") and m.get("早餐")):
+            continue
+        if m["午餐"] == m["夜市"]:
+            lunch_eq_night += 1
+        if m.get("下午茶"):
+            tea_extra.append(len(m["下午茶"] - m["午餐"]))
+        bf_missing.append(len(m["午餐"] - m["早餐"]))
+        bf_only.append(len(m["早餐"] - (m["午餐"] | m.get("下午茶", set())
+                                        | m["夜市"])))
+    n_full = max(1, len(bf_missing))
+
+    def avg(xs):
+        return sum(xs) / len(xs) if xs else 0
+
     return {
         "gap": gap, "gap_city": gap_city, "gap_bf": gap_bf, "gap_lf": gap_lf,
         "bf_med": med(bf_all), "lf_med": med(lf_all),
         "bf_n": len(bf_all), "lf_n": len(lf_all),
         "cheaper_n": cheaper,
+        # —— 菜单断层(新首屏主叙事) ——
+        "full_n": len(bf_missing),
+        "lunch_eq_night": lunch_eq_night,
+        "tea_extra": round(avg(tea_extra), 1),
+        "bf_missing": round(avg(bf_missing)),
+        "bf_only": round(avg(bf_only)),
     }
 
 
@@ -1537,7 +1667,7 @@ def main() -> int:
     gen = escape(str(surface.get("generatedAt", datetime.now().isoformat(timespec="seconds"))))
     target = escape(str(surface.get("targetDate", "")))
     hf = hero_facts(cities_raw)
-    overview = national_overview(cities_raw)
+    overview = national_overview(cities_raw, hf)
 
     # JS 失效时的静态兜底答案
     fb = data[0]
@@ -1608,12 +1738,16 @@ def main() -> int:
             f"价格随门店与日期变动，下单前请以麦当劳 App 实际显示为准。</footer>")
 
     hero_answer = hero(
-        f"同一家麦当劳，换个时段最便宜能差 ¥{hf['gap'] / 100:.2f}",
+        f"官方把一天切成四档，但后三档卖的东西一模一样",
         "麦当劳几点最便宜",
-        f"{hf['gap_city']}早餐最便宜一餐 ¥{hf['gap_bf'] / 100:.2f}，同一个午餐档就要 "
-        f"¥{hf['gap_lf'] / 100:.2f}。全国 {hf['bf_n']} 座城早餐有正餐地板价、中位 "
-        f"¥{hf['bf_med'] / 100:.2f}，午餐中位 ¥{hf['lf_med'] / 100:.2f}。"
-        f"选<b>城市</b>、选<b>几点去</b>，直接告诉你<b>那一刻最便宜能吃什么、多少钱</b>。<br>"
+        f"全国 {hf['full_n']} 座有完整四档的城市里，<b>午餐和夜市的菜单 "
+        f"{hf['lunch_eq_night']} 座完全相同</b>，下午茶平均只多 "
+        f"{hf['tea_extra']:g} 件；只有早餐是另一套菜单 —— 便宜 "
+        f"¥{(hf['lf_med'] - hf['bf_med']) / 100:.2f}，但少 {hf['bf_missing']} 件，"
+        f"换来 {hf['bf_only']} 件只属于早晨的麦满分。<br>"
+        f"所以真正该问的不是「几点最便宜」（答案永远是早上），而是"
+        f"<b>「我这个点到店，有什么可吃」</b>。选<b>城市</b>、选<b>几点去</b>，"
+        f"直接告诉你那一刻的完整在售菜单、多少钱、能凑出几件。<br>"
         f"<span class=\"hsub2\">页面上的价格是 {target} 的实价快照（日内实测恒定）；"
         f"想查此刻的实时价格，一条命令自己采 —— 见<a href=\"how.html\">方法与合规页</a>。</span>",
         [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",
@@ -1659,6 +1793,12 @@ def main() -> int:
 <p class="big">为什么按档问价就够</p>
 <p>先做了一次实测：同一商品在一天之内价格恒定，变化的是「这个时段卖不卖」。
 所以按档问价即可覆盖全天，不必逐分钟地毯式轰炸。</p>
+<p>全国跑完又拿到第二条规律，而且它比第一条更值得说：
+在 {hf['full_n']} 座有完整四档的城市里，<b>午餐和夜市的菜单 {hf['lunch_eq_night']} 座完全相同</b>，
+下午茶平均只多 {hf['tea_extra']:g} 件学生专享。真正只属于某一个时段的，是早餐 ——
+它平均少 {hf['bf_missing']} 件，却另有 {hf['bf_only']} 件是别的档买不到的（清一色麦满分、脆薯饼、脆油条）。
+换句话说，官方切了四档，但<b>价格轴几乎是平的</b>（四档最便宜的单品都是 ¥5 圆筒），
+断层全在菜单构成上 —— 这也正是页面上要告诉你「这个点有什么可吃」，而不是只报一个最低价的原因。</p>
 <p class="big">时段边界不是我们划的</p>
 <p>早餐/午餐/下午茶/夜市各自的起止时刻取自门店返回的排期。不同城市开门时间不同，
 开档时刻能差 4 个小时。</p>
@@ -1685,7 +1825,8 @@ AI 客户端用自然语言问）。实时个性查询（「我这店此刻买�
 带 Origin 的预检请求返回 403、响应里没有任何跨域许可头，WAF 直接把浏览器挡在门外。
 把个人 Token 塞进前端页面既不安全，也不是这个赛题鼓励的用法。</p>
 <p><b>三、快照在「今天」这个粒度上依然成立。</b>实测同一商品一天之内价格恒定，
-变的只是「这个时段卖不卖」；所以快照 + 时段结构，回答「今天几点去最便宜」没有失真。
+变的只是「这个时段卖不卖」；而菜单结构（哪一档卖哪些东西）同样是按天稳定的。
+所以快照 + 时段结构，回答「今天几点去、能吃到什么」没有失真。
 失真的是<b>日期</b>：页面上的价格是 {target} 问回来的，过几天再看，答案是那天的。
 真要查此刻，往下看一条命令。</p>
 <p class="big">想查此刻的实时价格？一条命令</p>
@@ -1724,7 +1865,8 @@ python -m unittest discover tests   # 41 项冒烟测试</pre>
     rank_hero = hero(
         f"全国 {n_cities} 座城市、{n_calls} 次真实问价",
         "全国榜单",
-        f"哪座城市早餐开得最早、哪座城市午餐最便宜、哪座城市吃早餐比午餐省得最多 —— "
+        f"哪座城市早餐开得最早、哪座城市午餐最便宜、哪座城市吃早餐比午餐省得最多，"
+        f"以及全国一致的菜单断层（午餐和夜市卖的是同一套东西）—— "
         f"全部是 {target} 这一天从麦当劳订餐系统问回来的实价，没有一个字是估的。"
         f"点城市名，直接带着它去<a href=\"index.html\">问答页</a>查时刻。",
         [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",

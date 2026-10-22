@@ -168,6 +168,20 @@ class TestRenderedSite(unittest.TestCase):
         self.assertIn("数据日期", idx)
         self.assertIn("hsub2", idx)
 
+    def test_menu_fault_is_the_headline(self):
+        """「永远早上最便宜」的修正: 价格轴平坦 + 后三档菜单同一套, 必须在三页都说清。"""
+        idx = self._read("index.html")
+        self.assertIn("官方把一天切成四档，但后三档卖的东西一模一样", idx)
+        self.assertIn("午餐和夜市的菜单", idx)
+        # 答案卡里的菜单差异块(早餐列独有商品 / 后三档明说没有独有)
+        self.assertIn("这一档的菜单，和别档比差在哪", idx)
+        self.assertIn("没有一件是这一档独有的", idx)
+        rk = self._read("rank.html")
+        self.assertIn("价格轴是平的，断层在菜单", rk)
+        self.assertIn("完全相同", rk)
+        how = self._read("how.html")
+        self.assertIn("价格轴几乎是平的", how)
+
     def test_data_js_is_valid_assignment(self):
         import json
         src = self._read("mcd-data.js")

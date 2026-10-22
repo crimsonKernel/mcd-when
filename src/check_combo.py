@@ -4,7 +4,7 @@ check_layout.py 只管「有没有溢出」, 不管「交互是不是坏的」�
 预算搭配器是纯前端逻辑(查表 + 渲染), 光看 HTML 源码证明不了它能跑,
 所以照它的办法: 注入一段脚本, 用 Chrome headless 加载, 把结果写进 <title> 带出来。
 
-验十二件事(对两个入口各跑一遍 —— 单文件离线版 report.html 和三页版 index.html,
+验十四件事(对两个入口各跑一遍 —— 单文件离线版 report.html 和三页版 index.html,
 后者靠 <script src="mcd-data.js"> 供数, 路径解析也要验):
   0. 页面加载无 JS 报错(有错则 title 里带 ERROR:)
   0b. 全天时段带画出来了: ≥4 段、可点段 ≥2、渲染干净、点一段答案跟着换档
@@ -148,12 +148,31 @@ PROBE = """
       var clickable = document.querySelectorAll("#ans .dbseg[data-t]");
       out.push("dayband:" + (document.querySelector("#ans .dayband") && segs.length >= 4
         && clickable.length >= 2 && clean("ans") ? "OK" : "BAD"));
-      if (clickable.length >= 2) {
-        // 点一个不是当前档的段, 答案要跟着换
+      // 10) 菜单差异块: 午餐/夜市没有独有商品, 早餐必须有「只在早餐档卖」
+      //     (价格轴是平的, 这个块才是答案的主体 —— 曾经整块不渲染也没人发现)
+      //     先显式点到午餐段, 不依赖探针运行时的真实时刻
+      function jumpTo(t) {
+        var b = document.querySelector('#ans .dbseg[data-t="' + t + '"]');
+        if (b) b.click();
+        return !!b;
+      }
+      var okLunch = jumpTo("10:44");
+      var md0 = txt("ans");
+      out.push("mdiff:" + (okLunch && md0.indexOf("这一档的菜单，和别档比差在哪") >= 0
+        && md0.indexOf("没有一件是这一档独有的") >= 0 && clean("ans") ? "OK" : "BAD"));
+      var okBf = jumpTo("07:14");
+      var md1 = txt("ans");
+      out.push("mdiffBf:" + (okBf && md1.indexOf("只在早餐档卖") >= 0
+        && md1.indexOf("麦满分") >= 0 && clean("ans") ? "OK" : "BAD"));
+      // 11) 时段带跳档: 点一个不是当前档的段, 答案要跟着换
+      //     注意: clickable 是上面拿的, 中间两次跳档已经整卡重渲染,
+      //     旧节点全部脱离文档 —— 必须重新查, 否则 click 静默失效
+      var live = document.querySelectorAll("#ans .dbseg[data-t]");
+      if (live.length >= 2) {
         var cur = document.querySelector("#ans .dbseg.cur");
         var target = null;
-        for (var ci = 0; ci < clickable.length; ci++) {
-          if (!cur || clickable[ci] !== cur) { target = clickable[ci]; break; }
+        for (var ci = 0; ci < live.length; ci++) {
+          if (!cur || live[ci] !== cur) { target = live[ci]; break; }
         }
         if (target) {
           var want = target.querySelector(".n").textContent;
