@@ -112,7 +112,7 @@ class TestDataFiles(unittest.TestCase):
 
 
 class TestRenderedSite(unittest.TestCase):
-    """三页版 + 单文件离线版的产物结构(未渲染则跳过)。"""
+    """两页版 + 单文件离线版的产物结构(未渲染则跳过)。"""
 
     def _read(self, name):
         p = os.path.join(ROOT, "dist", name)
@@ -134,20 +134,28 @@ class TestRenderedSite(unittest.TestCase):
 
     def test_index_uses_shared_data(self):
         html = self._read("index.html")
-        self.assertIn('src="mcd-data.js"', html)   # 三页版走外链数据
+        self.assertIn('src="mcd-data.js"', html)   # 两页版走外链数据
         self.assertNotIn("window.__MCD_DATA__ =", html)
         self.assertIn('id="provSel"', html)
         self.assertIn('id="ans"', html)
         self.assertIn('class="nav"', html)
 
-    def test_rank_page_is_static_with_deep_links(self):
-        html = self._read("rank.html")
-        self.assertNotIn("<script", html)           # 纯静态, 零 JS
-        self.assertIn("全国榜单", html)
-        self.assertIn("早餐开得最早的城市", html)
-        self.assertIn("午餐最便宜的城市", html)
-        # 城市 chips 是深链: 点下去带着 ?city= 去问答页
-        self.assertIn('href="index.html?city=', html)
+    def test_city_list_deep_links(self):
+        """1.2 起全国榜单页砍掉, 完整城市名单并进问答页底部的折叠区。
+
+        两页版里 chips 是深链(?city=), 单文件版里是 span 由页内接管。
+        """
+        idx = self._read("index.html")
+        self.assertIn('id="sec-cities"', idx)                 # 折叠区锚点
+        self.assertIn("全国 ", idx)
+        self.assertIn("座城市名单", idx)
+        self.assertIn('href="index.html?city=', idx)          # 点城市名直接去查
+        rp = self._read("report.html")
+        self.assertIn('id="sec-cities"', rp)
+        self.assertIn('data-c="', rp)                         # 单文件版页内接管
+        # 问答页不许再挂榜单页导航(how/report 里提「榜单页被砍掉」是叙事, 不在此列)
+        self.assertNotIn("全国榜单", idx)
+        self.assertNotIn('href="rank.html"', rp)
 
     def test_how_page_covers_method_and_compliance(self):
         html = self._read("how.html")
@@ -169,18 +177,26 @@ class TestRenderedSite(unittest.TestCase):
         self.assertIn("hsub2", idx)
 
     def test_menu_fault_is_the_headline(self):
-        """「永远早上最便宜」的修正: 价格轴平坦 + 后三档菜单同一套, 必须在三页都说清。"""
+        """「永远早上最便宜」的修正: 价格轴平坦 + 后三档菜单同一套, 必须在每个页面都说清。
+
+        1.2 起叙事升级: 不只「说清」, 而是把问题本身换掉 —— 首屏不再回答
+        「几点最便宜」, 改问「这个点有什么可吃」; rank.html 榜单页已砍掉,
+        改断言 index/how/report 三个产物。
+        """
         idx = self._read("index.html")
-        self.assertIn("官方把一天切成四档，但后三档卖的东西一模一样", idx)
+        self.assertIn("这个点，麦当劳卖什么", idx)              # 1.2 首屏问题
         self.assertIn("午餐和夜市的菜单", idx)
         # 答案卡里的菜单差异块(早餐列独有商品 / 后三档明说没有独有)
         self.assertIn("这一档的菜单，和别档比差在哪", idx)
         self.assertIn("没有一件是这一档独有的", idx)
-        rk = self._read("rank.html")
-        self.assertIn("价格轴是平的，断层在菜单", rk)
-        self.assertIn("完全相同", rk)
+        # 价格轴平坦要作为证据直接说出来(不是只藏在数据里)
+        self.assertIn("价格轴是平的", idx)
         how = self._read("how.html")
+        self.assertIn("为什么这个工具不回答「几点最便宜」", how)
         self.assertIn("价格轴几乎是平的", how)
+        rp = self._read("report.html")
+        self.assertIn("这个点，麦当劳卖什么", rp)
+        self.assertIn("价格轴是平的", rp)
 
     def test_data_js_is_valid_assignment(self):
         import json
@@ -194,12 +210,15 @@ class TestRenderedSite(unittest.TestCase):
         self.assertGreater(len(d["mn"]), 200)
 
     def test_nav_links_all_pages(self):
-        for page in ["index.html", "rank.html", "how.html", "report.html"]:
+        # 1.2 起只剩两页: 问答(这个点有什么) + 方法与合规; rank.html 已砍掉
+        for page in ["index.html", "how.html", "report.html"]:
             html = self._read(page)
             self.assertIn('class="nav"', html, page)
-            self.assertIn("问答", html, page)
-            self.assertIn("全国榜单", html, page)
+            self.assertIn("这个点有什么", html, page)
             self.assertIn("方法与合规", html, page)
+        # 榜单页的导航链接不许残留
+        for page in ["index.html", "how.html", "report.html"]:
+            self.assertNotIn('href="rank.html"', self._read(page), page)
 
 
 if __name__ == "__main__":

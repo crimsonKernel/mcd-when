@@ -4,7 +4,7 @@ check_layout.py 只管「有没有溢出」, 不管「交互是不是坏的」�
 预算搭配器是纯前端逻辑(查表 + 渲染), 光看 HTML 源码证明不了它能跑,
 所以照它的办法: 注入一段脚本, 用 Chrome headless 加载, 把结果写进 <title> 带出来。
 
-验十四件事(对两个入口各跑一遍 —— 单文件离线版 report.html 和三页版 index.html,
+验十四件事(对两个入口各跑一遍 —— 单文件离线版 report.html 和两页版 index.html,
 后者靠 <script src="mcd-data.js"> 供数, 路径解析也要验):
   0. 页面加载无 JS 报错(有错则 title 里带 ERROR:)
   0b. 全天时段带画出来了: ≥4 段、可点段 ≥2、渲染干净、点一段答案跟着换档
@@ -32,7 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
-# 单文件离线版 + 三页版问答页(数据走外链 mcd-data.js)
+# 单文件离线版 + 两页版问答页(数据走外链 mcd-data.js)
 TARGETS = ["report.html", "index.html"]
 
 CHROME_CANDIDATES = [

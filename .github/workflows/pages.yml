@@ -24,13 +24,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 三页版: index(问答) / rank(全国榜单) / how(方法与合规) +
+      # 两页版: index(问答) / how(方法与合规) +
       # 共享数据 mcd-data.js + 单文件离线版 report.html(导航里可下载)。
+      # 1.2 起全国榜单页 rank.html 已砍掉, 别再把它加回拷贝清单。
       # 根路径直接就是问答页, 评委不必猜文件名。
       - name: 整理站点目录
         run: |
           mkdir -p _site
-          cp dist/index.html dist/rank.html dist/how.html _site/
+          cp dist/index.html dist/how.html _site/
           cp dist/mcd-data.js dist/report.html dist/card.html _site/
 
       - uses: actions/configure-pages@v5

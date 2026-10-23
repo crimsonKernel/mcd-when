@@ -1,18 +1,25 @@
 """
-render_report.py — 把 data/surface_national.json 渲染为「一问一答」的离线页面
+render_report.py — 把 data/surface_batch.json 渲染成「到店决策」用的离线页面
 
-面向的是来麦当劳吃饭的人, 不是程序员:
+产品定位(1.2 起改)：**不回答「几点最便宜」，只回答「这个点有什么可吃」。**
+为什么换问法, 数据说了算: 四档最便宜的单品全是 ¥5 圆筒、正餐地板价后三档
+361 城零例外全是 ¥13.90 —— 价格轴是平的; 而 360 座有完整四档的城市里
+午餐和夜市的菜单 100% 相同 —— 断层全在菜单上。所以「几点最便宜」的答案
+永远是早上, 那句话没有信息量, 有用的是「我这个点到店, 有什么可吃」。
+
+面向的是站在麦当劳门口的人, 不是程序员:
   * 先问两件事 —— 你在哪个城市、你几点去 —— 然后只给那一刻的答案
-  * 291 座城市不铺开来展示, 用搜索框找; 找不到还能翻完整城市列表
+  * 388 座城市不铺开来展示, 用下拉框找; 找不到还能翻页面底部的完整城市名单
   * 打开就有答案(按浏览器本地时间), 不用操作
-  * 想看全貌的人自己展开底部的「全国对比」和「完整时刻表」
+  * 真空带要大声说: 这个点什么都买不到, 上一档几点收、下一档几点开
 
 排版防错乱(踩过的坑全在这里):
   * 全局 box-sizing; 表格 table-layout:fixed
   * 折叠 details 关闭时内容 display:none —— 否则里面的宽表格会把窄屏撑出横向滚动
   * 数字统一 tabular-nums; JS 只负责填内容, 不参与布局
 
-输出: dist/report.html —— 零外部依赖, 双击即开。
+输出: dist/index.html + dist/how.html + dist/report.html
+      —— 零外部依赖(两页版共用 mcd-data.js), 双击即开。
 """
 
 from __future__ import annotations
@@ -40,7 +47,7 @@ HOT_CITIES = ["北京", "上海", "广州", "深圳", "成都", "重庆", "武�
 PERIOD_ICON = {"早餐": "🌅", "午餐": "🍔", "下午茶": "🍰", "夜市": "🌙"}
 
 # 单文件离线版专用: 城市名单里的 chips 也能点(静态区复用 __pickCity)。
-# 三页版的榜单页 chips 是深链, 不需要这段。
+# 两页版的 chips 是深链, 不需要这段。
 CHIPS_SCRIPT = """
 <script>
 (function(){
@@ -65,7 +72,7 @@ body{margin:0;background:#FBF7F2;color:#1f2329;
  word-break:break-word;overflow-wrap:break-word}
 .wrap{max-width:820px;margin:0 auto}
 
-/* —— 顶部导航(三页版) —— */
+/* —— 顶部导航(两页版) —— */
 .nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 14px;
  padding:8px 10px;background:#fff;border:1px solid #e3e6ec;border-radius:14px;
  box-shadow:0 1px 2px rgba(16,24,40,.04)}
@@ -513,7 +520,7 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 JS = """
 (function () {
   var DATA = window.__MCD_DATA__;
-  var cur = DATA.cities[0], curTime = null, bestName = null;
+  var cur = DATA.cities[0], curTime = null;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -581,16 +588,9 @@ JS = """
     document.getElementById("citySel").value = cur.city;
   }
 
-  /* ---- 今天最便宜的那一档(一键直接给答案) ---- */
-  function cheapestPeriod(city) {
-    var best = null;
-    for (var i = 0; i < city.periods.length; i++) {
-      var p = city.periods[i];
-      if (!p.meal) continue;
-      if (!best || p.meal.p < best.meal.p) best = p;
-    }
-    return best;
-  }
+  /* 「今天最便宜的一档」在 1.2 里被整个砍掉了: 数据证明四档的一餐地板价
+     几乎一样(361 城后三档零例外同价), 「最便宜的一档」是个伪问题。
+     这里保留 clampSlot —— 点时段带某一档时仍需要落到可选时刻上。 */
   function clampSlot(city, t) {
     // 取 ≥ 目标时刻的第一个可选时刻(开档前 30 分钟落进去会变成"点不了")
     var slots = slotList(city);
@@ -603,7 +603,6 @@ JS = """
     var c = findCity(name);
     if (!c) return;
     cur = c;
-    bestName = null;
     syncSels();
     hotChips(); fillTimes(); render();
   }
@@ -646,6 +645,16 @@ JS = """
     for (var i = 0; i < city.periods.length; i++) {
       if (toMin(city.periods[i].start) > m) {
         if (!best || toMin(city.periods[i].start) < toMin(best.start)) best = city.periods[i];
+      }
+    }
+    return best;
+  }
+  /* 上一个已经收档的时段 —— 真空带里要告诉用户「刚才那一档几点收的」 */
+  function prevPeriod(city, t) {
+    var m = toMin(t), best = null;
+    for (var i = 0; i < city.periods.length; i++) {
+      if (toMin(city.periods[i].end) <= m) {
+        if (!best || toMin(city.periods[i].end) > toMin(best.end)) best = city.periods[i];
       }
     }
     return best;
@@ -758,7 +767,6 @@ JS = """
       nodes[i].onclick = function () {
         var t = this.getAttribute("data-t");
         if (!t) return;
-        bestName = null;
         curTime = clampSlot(cur, t);
         fillTimes();
         render();
@@ -807,15 +815,18 @@ JS = """
 
     var p = periodOf(city, t);
     if (!p) {
-      var nx = nextPeriod(city, t);
-      var msg;
+      // 真空带 / 打烊后: 这是最该被大声说出来的情况 —— 用户站在门口,
+      // 这时候告诉他「什么都买不到」比任何菜单都有用。
+      var nx = nextPeriod(city, t), prev = prevPeriod(city, t), msg;
       if (nx) {
         var w = toMin(nx.start) - toMin(t);
-        msg = "这个点<b>点不了</b> —— 麦当劳正在换菜单，"
-          + "再等 <b>" + (w > 0 ? w + " 分钟" : "一会儿") + "</b>，"
-          + esc(nx.name) + "档 <b>" + nx.start + "</b> 开档。";
+        msg = "这个点<b>什么都买不到</b> —— 麦当劳正在换菜单"
+          + (prev ? "，" + esc(prev.name) + "档 " + prev.end + " 已经收了" : "")
+          + "。再等 <b>" + (w > 0 ? w + " 分钟" : "一会儿") + "</b>，"
+          + esc(nx.name) + "档 <b>" + nx.start + "</b> 才开档。";
       } else {
-        msg = "这个点已经<b>过了当天的供餐时间</b>，点不了了。";
+        msg = "这个点已经<b>过了当天的供餐时间</b>，什么都买不到了"
+          + (prev ? "（" + esc(prev.name) + "档 " + prev.end + " 收档）" : "") + "。";
       }
       out.push('<p class="state gap">' + msg + "</p>");
       out.push('<p class="big">这家店的供餐时段（差一分钟就换一档）</p>');
@@ -831,14 +842,13 @@ JS = """
       return;
     }
 
-    var isBest = bestName && bestName === p.name;
-    if (isBest) {
-      out.push('<p class="state ok">' + pdot(p.name) + "这是<b>" + esc(city.city)
-        + "今天最便宜的一档</b>：" + esc(p.name) + " " + p.start + "–" + p.end + "</p>");
-    } else {
-      out.push('<p class="state ok">' + pdot(p.name) + "这个点属于 <b>" + esc(p.name)
-        + "档</b>（" + p.start + "–" + p.end + "）</p>");
-    }
+    // 1.2 起不再说「这是今天最便宜的一档」—— 四档一餐地板价几乎一样,
+    // 那句话是伪信息。改成说清楚这一档的边界和之后换什么。
+    var nx2 = nextPeriod(city, t);
+    out.push('<p class="state ok">' + pdot(p.name) + "这个点属于 <b>" + esc(p.name)
+      + "档</b>（" + p.start + "–" + p.end + "）"
+      + (nx2 ? "，到 <b>" + p.end + "</b> 之后换<b>" + esc(nx2.name) + "档</b>"
+             : "，今天最后一档") + "</p>");
 
     var meal = p.meal || p.any;
     if (meal) {
@@ -879,26 +889,16 @@ JS = """
       out.push("</div>");
     }
 
-    // 和今天最贵的那一档比, 省多少
-    var worst = null;
-    for (var k = 0; k < city.periods.length; k++) {
-      var r = city.periods[k];
-      if (r.meal && (!worst || r.meal.p > worst.meal.p)) worst = r;
-    }
-    if (worst && p.meal && worst.meal.p > p.meal.p && worst.name !== p.name) {
-      out.push('<p class="ansline">今天最贵的是<b>' + esc(worst.name) + "档</b>，"
-        + "最便宜一餐 " + yuan(worst.meal.p) + "；现在这一档便宜 <b>"
-        + yuan(worst.meal.p - p.meal.p) + "</b>。</p>");
-    }
-
-    // 各档地板价对比横条(一眼看出这一档在全天的位置)
+    // 各档一餐地板价对比横条。1.2 起它不再承担「比价省钱」的叙事 ——
+    // 四档几乎同价正是这个产品不问「几点最便宜」的原因 —— 而是反过来
+    // 当证据用: 价格轴是平的, 所以选档看你想吃什么, 不用比价。
     var rows = [], maxp = 0;
     for (var b = 0; b < city.periods.length; b++) {
       var bp = city.periods[b];
       if (bp.meal) { rows.push(bp); if (bp.meal.p > maxp) maxp = bp.meal.p; }
     }
     if (rows.length > 1 && maxp > 0) {
-      out.push('<p class="big" style="margin-top:16px">全天各档的最便宜一餐（这一档高亮）</p>');
+      out.push('<p class="big" style="margin-top:16px">全天各档的一餐地板价（这一档高亮）</p>');
       out.push('<div class="cmp">');
       for (var b2 = 0; b2 < rows.length; b2++) {
         var rp = rows[b2], w = Math.max(4, Math.round(rp.meal.p / maxp * 100));
@@ -909,6 +909,19 @@ JS = """
           + '<span class="pv">' + yuan(rp.meal.p) + "</span></div>");
       }
       out.push("</div>");
+      // 价格轴平坦, 就直接说出来 —— 这是「别比价, 看菜单」的依据
+      var lo = null, hi = null;
+      for (var b3 = 0; b3 < rows.length; b3++) {
+        if (!lo || rows[b3].meal.p < lo) lo = rows[b3].meal.p;
+        if (!hi || rows[b3].meal.p > hi) hi = rows[b3].meal.p;
+      }
+      if (hi - lo <= 100) {
+        out.push('<p class="anshint">四档的一餐地板价完全一样（都是 ' + yuan(lo)
+          + '）—— 价格轴是平的，选哪一档看你想吃什么，不用比价。</p>');
+      } else {
+        out.push('<p class="anshint">全天一餐地板价从 ' + yuan(lo) + " 到 " + yuan(hi)
+          + "，最多差 " + yuan(hi - lo) + "；差别主要在<b>这一档卖什么</b>，不在价格。</p>");
+      }
     }
 
     // 预算搭配器 —— 竞争对手的杀手锏是「怎么点最省」, 我们用 388 城真实数据回答
@@ -1342,25 +1355,17 @@ JS = """
     hotChips();
     fillTimes();
     document.getElementById("provSel").onchange = function () {
-      bestName = null;
       fillCitySel();
       pick(document.getElementById("citySel").value);
     };
-    document.getElementById("citySel").onchange = function () { bestName = null; pick(this.value); };
+    document.getElementById("citySel").onchange = function () { pick(this.value); };
     document.getElementById("times").onchange = function () {
-      bestName = null; curTime = this.value; render();
+      curTime = this.value; render();
     };
     document.getElementById("nowbtn").onclick = function () {
-      bestName = null; curTime = nowTime(); fillTimes(); render();
-    };
-    document.getElementById("bestbtn").onclick = function () {
-      var b = cheapestPeriod(cur);
-      if (!b) return;
-      bestName = b.name;
-      curTime = clampSlot(cur, b.start);
-      fillTimes(); render();
+      curTime = nowTime(); fillTimes(); render();
       var box = document.getElementById("ans");
-      if (box && box.scrollIntoView) box.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (box && box.scrollIntoView) box.scrollIntoView({ block: "start" });
     };
     render();
   }
@@ -1452,83 +1457,35 @@ def build_city(c: dict) -> dict:
         "probe": not c.get("fullMenu", False),
     }
 
-
 def rank_block(title: str, rows: list[tuple[str, str]], note: str = "") -> str:
-    items = "".join(f'<p class="rank">{i}. <b>{escape(a)}</b> —— {escape(b)}</p>'
-                    for i, (a, b) in enumerate(rows, 1))
-    return f"<h3>{escape(title)}</h3>{items}" + (
-        f'<p class="sub">{escape(note)}</p>' if note else "")
+    """按大区分组的完整城市列表(找不到自己城市时的兜底入口)。
 
-
-def national_overview(cities: list[dict], hf: dict | None = None) -> str:
-    """全国对比: 开档时间 / 各档地板价 / 早餐溢价 / 菜单断层 —— 全是实测出来的地域差异。"""
+    href_prefix 非空时(两页版), chips 是深链 —— 点下去直接带着
+    ?city= 跳到问答页; 为空时(单文件版)是 span, 由页内 __pickCity 接管。
+    """
+    groups: dict[str, list[str]] = {}
+    for c in cities:
+        groups.setdefault(c.get("region") or "其他", []).append(c["city"])
     out = []
-    # 最重要的全国结论放最前面: 价格轴是平的, 断层全在菜单构成上
-    if hf and hf.get("full_n"):
-        out.append(
-            '<p class="big">价格轴是平的，断层在菜单</p>'
-            f'<p class="sub">{hf["full_n"]} 座有完整四档的城市里，'
-            f'<b>午餐和夜市的菜单 {hf["lunch_eq_night"]} 座完全相同</b>，'
-            f'下午茶平均只多 {hf["tea_extra"]:g} 件学生专享；只有早餐是另一套菜单 —— '
-            f'便宜 ¥{(hf["lf_med"] - hf["bf_med"]) / 100:.2f}，但少 {hf["bf_missing"]} 件，'
-            f'换来 {hf["bf_only"]} 件只属于早晨的麦满分。'
-            f'所以「几点最便宜」的答案永远是早上，这句话没有信息量；'
-            f'真正该问的是「我这个点到店，有什么可吃」。</p>')
-    # 早餐开档时间
-    with_bf = [(c["city"], c["periods"][0]["start"])
-               for c in cities
-               if c.get("periods") and c["periods"][0]["name"] == "早餐"
-               and c["periods"][0].get("start")]
-    earliest = sorted(with_bf, key=lambda x: (to_min(x[1]), x[0]))[:8]
-    latest = sorted(with_bf, key=lambda x: (-to_min(x[1]), x[0]))[:8]
-    no_bf = [c["city"] for c in cities
-             if not (c.get("periods") and c["periods"][0]["name"] == "早餐")]
-    out.append(rank_block("早餐开得最早的城市（想吃早餐不用等）",
-                          [(f"{c} {t}", "早餐档 " + t + " 开档") for c, t in earliest]))
-    out.append(rank_block("早餐开得最晚的城市",
-                          [(f"{c} {t}", "早餐档 " + t + " 才开档") for c, t in latest]))
-    if no_bf:
-        out.append(f'<p class="sub">另有 <b>{len(no_bf)}</b> 座城市的样本门店'
-                   f'在早餐档时段还没开门，当天没有早餐档，例如：'
-                   f'{escape("、".join(no_bf[:8]))}。</p>')
-
-    # 午餐地板价
-    lunch = []
-    for c in cities:
-        f = (c.get("floors", {}).get("pickup") or {}).get("午餐") or {}
-        if f.get("meal"):
-            lunch.append((c["city"], f["meal"]["price"], f["meal"]["name"]))
-    if lunch:
-        low = sorted(lunch, key=lambda x: (x[1], x[0]))[:8]
-        high = sorted(lunch, key=lambda x: (-x[1], x[0]))[:8]
-        out.append(rank_block("午餐最便宜的城市",
-                              [(f"{c} ¥{p / 100:.2f}", n) for c, p, n in low]))
-        out.append(rank_block("午餐最贵的城市",
-                              [(f"{c} ¥{p / 100:.2f}", n) for c, p, n in high]))
-
-    # 早餐 vs 午餐 价差
-    delta = []
-    for c in cities:
-        fl = c.get("floors", {}).get("pickup") or {}
-        b = (fl.get("早餐") or {}).get("meal")
-        l = (fl.get("午餐") or {}).get("meal")
-        if b and l and l["price"] > b["price"]:
-            delta.append((c["city"], l["price"] - b["price"], b["price"], l["price"]))
-    if delta:
-        top = sorted(delta, key=lambda x: -x[1])[:8]
-        out.append(rank_block("早餐比午餐省得最多的城市",
-                              [(f"{c} 省 ¥{d / 100:.2f}",
-                                f"早餐 ¥{bp / 100:.2f} → 午餐 ¥{lp / 100:.2f}")
-                               for c, d, bp, lp in top]))
-        out.append(f'<p class="sub">全部 {len(delta)} 座有早餐档的城市里，'
-                   f'早餐档的地板价都低于午餐档 —— 这是全国一致的规律。</p>')
+    for region in ["华北", "东北", "华东", "华中", "华南", "西南", "西北", "其他"]:
+        if region not in groups:
+            continue
+        if href_prefix:
+            chips = "".join(
+                f'<a class="chip" href="{href_prefix}?city={quote(x)}">{escape(x)}</a>'
+                for x in groups[region])
+        else:
+            chips = "".join(f'<span class="chip" data-c="{escape(x)}">{escape(x)}</span>'
+                            for x in groups[region])
+        out.append(f"<h3>{escape(region)}（{len(groups[region])} 座）</h3>"
+                   f'<div class="chips citylist">{chips}</div>')
     return "".join(out)
 
 
 def all_cities_block(cities: list[dict], href_prefix: str = "") -> str:
     """按大区分组的完整城市列表(找不到自己城市时的兜底入口)。
 
-    href_prefix 非空时(三页版), chips 是深链 —— 点下去直接带着
+    href_prefix 非空时(两页版), chips 是深链 —— 点下去直接带着
     ?city= 跳到问答页; 为空时(单文件版)是 span, 由页内 __pickCity 接管。
     """
     groups: dict[str, list[str]] = {}
@@ -1667,7 +1624,6 @@ def main() -> int:
     gen = escape(str(surface.get("generatedAt", datetime.now().isoformat(timespec="seconds"))))
     target = escape(str(surface.get("targetDate", "")))
     hf = hero_facts(cities_raw)
-    overview = national_overview(cities_raw, hf)
 
     # JS 失效时的静态兜底答案
     fb = data[0]
@@ -1690,7 +1646,7 @@ def main() -> int:
             f'<p class="more">想查别的城市和时刻，需要浏览器开启 JavaScript；'
             f'否则可以展开下面的全国对比和城市列表查看。</p></div>')
 
-    # —— 可组合区块: 三页版与单文件版共用同一批片段, 保证两边不漂移 ——
+    # —— 可组合区块: 两页版与单文件版共用同一批片段, 保证两边不漂移 ——
     def hero(hook: str, h1: str, hsub: str, stats: list[str]) -> str:
         st = "".join(f'<span class="hs">{s}</span>' for s in stats)
         return (f'<header class="hero"><p class="hook">{hook}</p><h1>{h1}</h1>'
@@ -1698,21 +1654,21 @@ def main() -> int:
                 f'<div class="hero-stats">{st}</div></header>')
 
     def nav(active: str, single: bool = False) -> str:
-        """三页版导航; single=True(单文件离线版)时换成页内锚点。"""
+        """两页版导航; single=True(单文件离线版)时换成页内锚点。
+
+        1.2 起只剩两页: 问答 + 方法与合规。全国榜单页整个砍掉了 ——
+        「哪座城最便宜」正是被我们自己的数据否掉的那个问题。"""
         def href(k: str) -> str:
             if single:
-                return {"answer": "#sec-answer", "rank": "#sec-rank",
-                        "how": "#sec-how"}[k]
-            return {"answer": "index.html", "rank": "rank.html",
-                    "how": "how.html"}[k]
+                return {"answer": "#sec-answer", "how": "#sec-how"}[k]
+            return {"answer": "index.html", "how": "how.html"}[k]
         links = "".join(
             f'<a href="{href(k)}"' + (' class="on"' if k == active else "")
             + f">{t}</a>"
-            for k, t in [("answer", "问答"), ("rank", "全国榜单"),
-                         ("how", "方法与合规")])
+            for k, t in [("answer", "这个点有什么"), ("how", "方法与合规")])
         dl = ("" if single else
               '<a class="dl" href="report.html" download>离线单文件版 ↓</a>')
-        return (f'<nav class="nav"><span class="brand">🍔 麦当劳几点最便宜</span>'
+        return (f'<nav class="nav"><span class="brand">🍔 麦当劳这个点卖什么</span>'
                 f"{links}{dl}</nav>")
 
     def shell(title: str, nav_html: str, body: str,
@@ -1738,16 +1694,14 @@ def main() -> int:
             f"价格随门店与日期变动，下单前请以麦当劳 App 实际显示为准。</footer>")
 
     hero_answer = hero(
-        f"官方把一天切成四档，但后三档卖的东西一模一样",
-        "麦当劳几点最便宜",
-        f"全国 {hf['full_n']} 座有完整四档的城市里，<b>午餐和夜市的菜单 "
-        f"{hf['lunch_eq_night']} 座完全相同</b>，下午茶平均只多 "
-        f"{hf['tea_extra']:g} 件；只有早餐是另一套菜单 —— 便宜 "
-        f"¥{(hf['lf_med'] - hf['bf_med']) / 100:.2f}，但少 {hf['bf_missing']} 件，"
-        f"换来 {hf['bf_only']} 件只属于早晨的麦满分。<br>"
-        f"所以真正该问的不是「几点最便宜」（答案永远是早上），而是"
-        f"<b>「我这个点到店，有什么可吃」</b>。选<b>城市</b>、选<b>几点去</b>，"
-        f"直接告诉你那一刻的完整在售菜单、多少钱、能凑出几件。<br>"
+        "到店前 30 秒，先看一眼这个点卖什么",
+        "这个点，麦当劳卖什么",
+        f"选<b>城市</b>、选<b>几点去</b>，直接告诉你那一刻的完整在售菜单、"
+        f"最便宜的一顿多少钱、兜里 ¥X 能凑出几件。<br>"
+        f"全国 {hf['full_n']} 座有完整四档的城市里，午餐和夜市的菜单 "
+        f"{hf['lunch_eq_night']} 座完全相同，下午茶平均只多 "
+        f"{hf['tea_extra']:g} 件；只有早餐是另一套菜单 —— "
+        f"所以「几点最便宜」的答案永远是早上，有用的是「这个点有什么可吃」。<br>"
         f"<span class=\"hsub2\">页面上的价格是 {target} 的实价快照（日内实测恒定）；"
         f"想查此刻的实时价格，一条命令自己采 —— 见<a href=\"how.html\">方法与合规页</a>。</span>",
         [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",
@@ -1766,7 +1720,7 @@ def main() -> int:
         <select class="sel" id="citySel"></select>
       </div>
     </div>
-    <p class="qhint">没找到你的城市？去<a href="rank.html">全国榜单</a>页翻城市名单。</p>
+    <p class="qhint">没找到你的城市？翻页面底部的<a href="#sec-cities">完整城市名单</a>。</p>
     <div id="suggest"></div>
   </div>
   <div class="qrow">
@@ -1778,8 +1732,7 @@ def main() -> int:
       </div>
     </div>
     <div class="acts">
-      <button class="now primary" id="bestbtn" type="button">直接告诉我今天最便宜的时刻</button>
-      <button class="now" id="nowbtn" type="button">就用现在这个时间</button>
+      <button class="now primary" id="nowbtn" type="button">就用现在这个时间</button>
     </div>
   </div>
 </div>"""
@@ -1790,6 +1743,19 @@ def main() -> int:
 <p>程序对每座城市的样本门店，按<b>官方时段</b>（早餐/午餐/下午茶/夜市）
 逐个向麦当劳订餐系统问价，相当于在 App 里选好商品、选好取餐时间后看到的实付金额，
 问回来的数字原样记下。这一版一共问价 <b>{n_calls}</b> 次，覆盖 <b>{n_cities}</b> 座城市。</p>
+<p class="big">为什么这个工具不回答「几点最便宜」</p>
+<p>因为我们本来就是要回答这个问题的 —— 项目就叫 mcd-when，第一版的首屏标题就是
+「麦当劳几点最便宜」。是数据把这个前提推翻了：</p>
+<p>一、<b>价格轴几乎是平的。</b>{hf['full_n']} 座有完整四档的城市里，后三档的一餐地板价
+零例外全是同一个数（361 城实测），四档最便宜的单品清一色是 ¥5 圆筒。
+二、<b>答案是恒定的。</b>361 座能对比早餐和午餐的城市，361 座都是早餐更便宜
+（中位 ¥{hf['bf_med'] / 100:.2f} vs ¥{hf['lf_med'] / 100:.2f}）。
+一个答案恒定、而且只值 ¥{(hf['lf_med'] - hf['bf_med']) / 100:.2f} 的问题，不值得做一个工具 ——
+用户来一次记住「早点去」，此生不再需要第二个页面。</p>
+<p>所以我们把问题换成了<b>「我这个点到店，有什么可吃」</b>。这一版砍掉了
+「直接告诉我今天最便宜的时刻」按钮和全国榜单页，只留下到店那一刻真正用得上的东西：
+完整在售菜单、这一档最便宜的一顿多少钱、真空带警告、下一档什么时候变、
+以及兜里 ¥X 能凑出几件。</p>
 <p class="big">为什么按档问价就够</p>
 <p>先做了一次实测：同一商品在一天之内价格恒定，变化的是「这个时段卖不卖」。
 所以按档问价即可覆盖全天，不必逐分钟地毯式轰炸。</p>
@@ -1826,7 +1792,7 @@ AI 客户端用自然语言问）。实时个性查询（「我这店此刻买�
 把个人 Token 塞进前端页面既不安全，也不是这个赛题鼓励的用法。</p>
 <p><b>三、快照在「今天」这个粒度上依然成立。</b>实测同一商品一天之内价格恒定，
 变的只是「这个时段卖不卖」；而菜单结构（哪一档卖哪些东西）同样是按天稳定的。
-所以快照 + 时段结构，回答「今天几点去、能吃到什么」没有失真。
+所以快照 + 时段结构，回答「今天这个点能吃到什么」没有失真。
 失真的是<b>日期</b>：页面上的价格是 {target} 问回来的，过几天再看，答案是那天的。
 真要查此刻，往下看一条命令。</p>
 <p class="big">想查此刻的实时价格？一条命令</p>
@@ -1835,14 +1801,16 @@ AI 客户端用自然语言问）。实时个性查询（「我这店此刻买�
 python src/now.py --city 上海        # 我这店此刻买得到什么、几块钱、下一档什么时候变</pre>
 <p>它会自动校时 → 找你附近门店 → 按<b>当前时段</b>问价并现算背包 → 再对比下一时段，
 全程只读。用法与字段含义见 <code>README.md</code> 与 <code>MCP_INTEGRATION.md</code>。
-网页负责「全天规律」，这条命令负责「我现在该怎么办」。</p>
+网页负责「全天任何一刻能吃到什么」，这条命令负责「此刻、我这家店」。</p>
 <p class="big">怎么复现</p>
 <pre style="white-space:pre-wrap">git clone https://github.com/crimsonKernel/mcd-when.git
 cd mcd-when
-python src/render_report.py        # 用仓库里的快照渲染页面
+python src/render_report.py        # 用仓库里的快照渲染页面(两页 + 单文件离线版)
+python src/render_card.py          # 渲染 README 首图卡片
 python src/parity_combo.py         # JS 背包 vs Python 背包对拍
-python src/check_combo.py          # 无头浏览器走 12 条交互路径
-python -m unittest discover tests   # 41 项冒烟测试</pre>
+python src/check_combo.py          # 无头浏览器走 14 条交互路径
+python src/check_layout.py         # 排版零溢出体检
+python -m unittest discover tests   # 42 项冒烟测试</pre>
 <p class="big">合规声明</p>
 <p>本项目为 2026 麦当劳程序员创意开发大赛参赛作品，<b>非麦当劳官方产品</b>，
 与麦当劳官方无隶属、背书或赞助关系；「麦当劳 / McDonald's」是各自持有人的商标。
@@ -1852,37 +1820,21 @@ python -m unittest discover tests   # 41 项冒烟测试</pre>
 参赛声明见 <code>CONTEST_DECLARATION.md</code>。</p>
 </div>"""
 
-    # ① 问答页(Pages 根路径)
+    # ① 问答页(Pages 根路径) —— 1.2 起它就是全部产品:
+    #    选城市选时刻 → 这一刻卖什么/多少钱/¥X 能凑多饱, 外加兜底的城市名单。
     index_html = shell(
-        f"麦当劳几点最便宜 · 全国 {n_cities} 城，选城市和时刻直接给答案",
+        f"麦当劳这个点卖什么 · 全国 {n_cities} 城，选城市和时刻直接看菜单",
         nav("answer"),
         hero_answer + f'<div id="sec-answer">{q_widget}</div>'
-        + f'<div id="ans">{fallback}</div>',
+        + f'<div id="ans">{fallback}</div>'
+        + f'<details id="sec-cities"><summary>全国 {n_cities} 座城市名单'
+          f'（点城市名直接去查）</summary>'
+          f'<div class="dbody">{all_cities_block(cities_raw, href_prefix="index.html")}'
+          f"</div></details>",
         '<script src="mcd-data.js"></script>',
         f"<script>{JS}</script>")
 
-    # ② 全国榜单页(纯静态, 零 JS)
-    rank_hero = hero(
-        f"全国 {n_cities} 座城市、{n_calls} 次真实问价",
-        "全国榜单",
-        f"哪座城市早餐开得最早、哪座城市午餐最便宜、哪座城市吃早餐比午餐省得最多，"
-        f"以及全国一致的菜单断层（午餐和夜市卖的是同一套东西）—— "
-        f"全部是 {target} 这一天从麦当劳订餐系统问回来的实价，没有一个字是估的。"
-        f"点城市名，直接带着它去<a href=\"index.html\">问答页</a>查时刻。",
-        [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",
-         "按官方时段核价", "点城市名直接去查"])
-    rank_html = shell(
-        f"全国榜单 · 麦当劳几点最便宜（{n_cities} 城实测）",
-        nav("rank"),
-        rank_hero
-        + f'<div class="card"><p class="big" style="margin-top:0">全国对比</p>'
-          f"{overview}</div>"
-        + f'<div class="card"><p class="big" style="margin-top:0">'
-          f"全国 {n_cities} 座城市名单</p>"
-          f"{all_cities_block(cities_raw, href_prefix='index.html')}</div>",
-        "", "")
-
-    # ③ 方法与合规页(纯静态, 零 JS)
+    # ② 方法与合规页(纯静态, 零 JS)
     how_hero = hero(
         "每一个数字都能复现",
         "这些数字是怎么来的",
@@ -1891,19 +1843,18 @@ python -m unittest discover tests   # 41 项冒烟测试</pre>
         [f"<b>{n_calls}</b>次真实问价", "链路只读",
          "网页 / MCP 双入口", "参赛作品 · 非官方"])
     how_html = shell(
-        "方法与合规 · 麦当劳几点最便宜",
+        "方法与合规 · 麦当劳这个点卖什么",
         nav("how"),
         how_hero + method_body, "", "")
 
-    # ④ 单文件离线版(双击即开, 一切内嵌 —— 保持这个卖点不变)
+    # ③ 单文件离线版(双击即开, 一切内嵌 —— 保持这个卖点不变)
     single_html = shell(
-        f"麦当劳几点最便宜 · 全国 {n_cities} 城，选城市和时刻直接给答案",
+        f"麦当劳这个点卖什么 · 全国 {n_cities} 城，选城市和时刻直接看菜单",
         nav("answer", single=True),
         hero_answer + f'<div id="sec-answer">{q_widget}</div>'
         + f'<div id="ans">{fallback}</div>'
-        + '<details id="sec-rank"><summary>看看全国：哪里早餐开得早、哪里午餐最便宜</summary>'
-          f'<div class="dbody">{overview}</div></details>'
-        + f'<details><summary>全国 {n_cities} 座城市名单</summary>'
+        + f'<details id="sec-cities"><summary>全国 {n_cities} 座城市名单'
+          f'（点城市名直接去查）</summary>'
           f'<div class="dbody">{all_cities_block(cities_raw)}</div></details>'
         + '<details id="sec-how"><summary>这些数字是怎么来的？</summary>'
           f'<div class="dbody">{method_body}</div></details>',
@@ -1913,17 +1864,17 @@ python -m unittest discover tests   # 41 项冒烟测试</pre>
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "mcd-data.js").write_text(
         "window.__MCD_DATA__ = " + payload + ";\n", encoding="utf-8")
-    outputs = {"index.html": index_html, "rank.html": rank_html,
-               "how.html": how_html, "report.html": single_html}
+    outputs = {"index.html": index_html, "how.html": how_html,
+               "report.html": single_html}
     for name, content in outputs.items():
         (OUT_DIR / name).write_text(content, encoding="utf-8")
     for name in outputs:
         p = OUT_DIR / name
         print(f"已生成 {p.name} ({p.stat().st_size // 1024} KB)")
     print(f"已生成 mcd-data.js ({(OUT_DIR / 'mcd-data.js').stat().st_size // 1024} KB)"
-          f" · {n_cities} 城 · 三页版 + 单文件离线版")
+          f" · {n_cities} 城 · 两页版 + 单文件离线版")
 
-    # 一次查完: 四个页面 + 外链数据(三页版靠 mcd-data.js 供数)
+    # 一次查完: 三个产物 + 外链数据(两页版靠 mcd-data.js 供数)
     return check_inline_js(*[OUT_DIR / n for n in outputs],
                            OUT_DIR / "mcd-data.js")
 
@@ -1932,7 +1883,7 @@ NODE = "C:/Users/xueyihan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
 
 # 产物自检: 页面里任何一段内联脚本语法错误, 整站就白屏 —— 而且
 # 从 HTML 源码肉眼看不出来(Python 字符串把 \" 吃成 " 就会这样)。
-# 外链的 mcd-data.js 也要查(三页版靠它供数, 坏了页面同样全废)。
+# 外链的 mcd-data.js 也要查(两页版靠它供数, 坏了页面同样全废)。
 # 所以渲染完必须用 node 逐块 new Function 校验, 有问题就让构建失败。
 JS_CHECK = r"""
 const fs = require('fs');

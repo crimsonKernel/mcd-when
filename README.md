@@ -17,8 +17,10 @@
 > 全国 360 座有完整四档的城市里，午餐和夜市的菜单 100% 相同，下午茶平均只多 1.9 件学生专享；
 > 只有早餐是另一套菜单 —— 便宜 ¥3.60，但少 80 件，换来 50 件只属于早晨的麦满分。
 
-> 所以真正该问的不是「几点最便宜」（答案永远是早上），而是「我这个点到店，有什么可吃」。
-> 我们把**全国 31 个省级行政区、388 座城市**的麦当劳都问了一遍 —— **36200 次逐笔问价**（其中 387 城是完整菜单逐商品核价），几点能点什么、多少钱，摊开给你看。
+> 所以「几点最便宜」的答案永远是早上 —— 那句话没有信息量。这个项目因此不回答「几点最便宜」，
+> 只回答一件事：**「我这个点到店，有什么可吃」**。我们把**全国 31 个省级行政区、388 座城市**的
+> 麦当劳都问了一遍 —— **36200 次逐笔问价**（其中 387 城是完整菜单逐商品核价），选城市、选时刻，
+> 那一刻的完整在售菜单、最便宜的一顿多少钱、兜里 ¥X 能凑出几件，摊开给你看。
 
 ![全国 388 城实测：官方切了四档，后三档卖的却是同一套东西](images/heatmap.png)
 
@@ -36,13 +38,11 @@
 
 ![桌面端实拍](images/usage-desktop.png)
 
-三页站点 —— 问答页 / 全国榜单 / 方法与合规：
+两页站点 —— 问答页 / 方法与合规，完整城市名单在问答页底部：
 
 ![问答页](images/page-index.png)
 
-全国榜单页与方法页：
-
-![全国榜单](images/page-rank.png)
+![完整城市名单](images/page-cities.png)
 ![方法与合规](images/page-how.png)
 
 </details>
@@ -119,18 +119,21 @@
 
 **所有价格均来自 `calculate-price` 实时核价, 未经任何模型估算, 未产生任何真实订单。**
 
-- 在线查你自己的城市(无需 Token): **<https://crimsonkernel.github.io/mcd-when/>**（问答 / 全国榜单 / 方法与合规 三页）
+- 在线查你自己的城市(无需 Token): **<https://crimsonkernel.github.io/mcd-when/>**（问答 / 方法与合规 两页，底部附完整城市名单）
 - 离线版: [dist/report.html](dist/report.html)(双击即开, 完全自包含, 断网也能用)
 
 ## 它在回答什么问题
 
-别的项目回答「**买什么**最便宜」。这个项目回答「**什么时候**」，以及顺着时间线往下问的那一串：
+别的项目回答「**买什么**最便宜」。这个项目原本回答「**什么时候**最便宜」——
+是数据把这个问题本身否掉了：四档最便宜的单品全是 ¥5 圆筒、后三档一餐地板价
+361 城零例外同价、361 座能对比的城市全是早餐更便宜。答案恒定还只值 ¥3.60 的问题，
+不值得做一个工具。所以 1.2 起它只回答「**这个点有什么可吃**」：
 
-- 几点之前, 早餐还买得到?
-- 我下午 3 点到店, 能点的最便宜一套是什么?
+- 我下午 3 点到店, 这一刻的完整在售菜单是什么?
+- 这一档最便宜的一顿多少钱, 是谁?
 - **我有 ¥20，这一档能吃到最饱的是什么？** ← 页面上直接算，不用问 AI
+- 真空带里站在门口, 上一档几点收的、下一档几点开?
 - 得来速和到店自提, 同一时刻同一商品价差多少?
-- 麦当劳官方的时段划分, 和真实菜单边界对得上吗?
 
 「¥20 能吃到什么」这类问题，答案是 0/1 背包在本地菜单数据上跑出来的：
 先保证有一口能当饭的（有主食是硬门槛，不是优先级），再尽量多件。
@@ -155,7 +158,9 @@
 
 ## 部署到你自己的 GitHub（GitHub Pages）
 
-站点是**三页静态 HTML**（问答 / 全国榜单 / 方法与合规，共享一份 `mcd-data.js`），
+站点是**两页静态 HTML**（问答 / 方法与合规，共享一份 `mcd-data.js`；
+全国榜单页在 1.2 被砍掉——「哪座城最便宜」正是被我们自己的数据否掉的问题，
+完整城市名单改放在问答页底部，点城市名直接去查），
 仓库里已经带好了 Pages 工作流（`.github/workflows/pages.yml`），
 推送即上线，不用手工传文件：
 
@@ -170,7 +175,7 @@ git clone <你的仓库地址> mcd-when && cd mcd-when
 
 > 没有构建步骤、没有依赖、不需要装东西。
 > 想完全手动也行：`python src/render_report.py` 重新渲染后，
-> `cp dist/index.html dist/rank.html dist/how.html dist/mcd-data.js <你的站点目录>/`。
+> `cp dist/index.html dist/how.html dist/mcd-data.js <你的站点目录>/`。
 >
 > 另有一份**单文件离线版** `dist/report.html`：数据全部内联，双击即开、
 > 断网也能用，导航里也能下载到（「离线单文件版 ↓」）。
@@ -195,7 +200,7 @@ python src/now.py --city 上海
 ```
 
 （网页上是 **2026-10-22 的实价快照**：日内实测价格恒定，快照 + 时段结构回答
-「今天几点去最便宜」不失真；但过几天打开，答案是那天的。实时查询交给用户本机，
+「这个点能吃到什么」不失真；但过几天打开，答案是那天的。实时查询交给用户本机，
 原因见[方法与合规页](dist/how.html)：官方限流 600 次/分钟/Token，而全国普查一共问价
 36200 次，满速也要连续跑 60 分钟以上；且订餐接口对浏览器跨域访问返回 403、
 Token 进前端既不安全也不合规。）
@@ -245,7 +250,7 @@ python src/survey.py --city 上海                    # 老脚本: 全时刻地�
 #### 5. 渲染报告
 
 ```bash
-python src/render_report.py    # -> dist/{index,rank,how}.html + mcd-data.js
+python src/render_report.py    # -> dist/{index,how}.html + mcd-data.js
                               #    + dist/report.html (单文件离线版)
 python src/render_card.py      # -> dist/card.html   (README 首图源)
 ```
@@ -303,11 +308,11 @@ python src/render_card.py      # -> dist/card.html   (README 首图源)
 ## 自检
 
 ```bash
-python -m unittest discover tests           # 41 项冒烟测试(数据/分类/算法/产物, 零依赖)
-python src/render_report.py                 # 渲染四产物(含 5 个文件的脚本语法自检, 挂了构建失败)
+python -m unittest discover tests           # 42 项冒烟测试(数据/分类/算法/产物, 零依赖)
+python src/render_report.py                 # 渲染三产物(含 5 个文件的脚本语法自检, 挂了构建失败)
 python src/parity_combo.py                  # 页面 JS 背包 vs Python 背包逐分对拍(207 例)
-python src/check_layout.py                  # 四页面 × 四视口零溢出体检
-python src/check_combo.py                   # 预算搭配器实测(单文件 + 三页两入口, 各 12 条路径)
+python src/check_layout.py                  # 三产物 × 四视口零溢出体检
+python src/check_combo.py                   # 预算搭配器实测(单文件 + 两页两入口, 各 14 条路径)
 ```
 
 ## 参与方式
@@ -341,7 +346,7 @@ mcd-when/
 │   ├── PROMO.md               四平台宣发文案
 │   ├── ADVANCED.md            进阶: 批量核价与按需单城查询
 │   └── MCP_DEMO.md            MCP 客户端演示脚本
-├── tests/test_smoke.py        零依赖冒烟测试(41 项)
+├── tests/test_smoke.py        零依赖冒烟测试(42 项)
 ├── mcp-config.example.json    MCP 配置示例(环境变量占位符)
 ├── mcp-when-config.example.json  mcd-when + 官方 MCP 双 Server 配置
 ├── config.example.json        普查配置示例(城市/渠道)
@@ -357,9 +362,9 @@ mcd-when/
 │   ├── analyze_surface.py     验证「价格全天恒定」等关键假设
 │   ├── analyze_national.py    全国结论汇总(开档时间/价差/异常值)
 │   ├── now.py                 此刻决策(当前最便宜/下一档倒计时)
-│   ├── render_report.py       渲染三页版站点 + 单文件离线版(含脚本语法自检)
+│   ├── render_report.py       渲染两页版站点 + 单文件离线版(含脚本语法自检)
 │   ├── render_card.py         渲染 README 首图(dist/card.html)
-│   ├── check_layout.py        排版零溢出体检(四页面 × 四视口自动检测)
+│   ├── check_layout.py        排版零溢出体检(三产物 × 四视口自动检测)
 │   ├── check_combo.py         预算搭配器实测(无头浏览器, 两个入口 × 14 条路径)
 │   ├── parity_combo.py        页面 JS 背包 vs Python 背包逐分对拍(207 例)
 │   ├── combo.py               「预算内怎么点最饱」核心算法(MCP 与页面共用)
@@ -369,6 +374,6 @@ mcd-when/
 │   └── shot_readme.py         重新生成 README 实拍截图(界面改版后跑这个)
 ├── data/                      价格表 / 城市探测 / 工具 schema
 ├── images/                    README 首图 + 实拍截图
-└── dist/                      index/rank/how.html(三页版) + mcd-data.js(共享数据)
+└── dist/                      index/how.html(两页版) + mcd-data.js(共享数据)
                                + report.html(单文件离线版) + card.html(首图源)
 ```

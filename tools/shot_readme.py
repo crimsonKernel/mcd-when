@@ -90,7 +90,14 @@ if __name__ == "__main__":
     # 手机端: 只要答案卡那一屏(早餐档, 能看见「只在早餐档卖」的麦满分清单)
     render("usage-mobile.png", "index.html", pick("北京", "北京", "07:30"),
            size=(390, 844), hide_top=True)
-    # 全国榜单页
-    render("page-rank.png", "rank.html", size=(1280, 900))
+    # 完整城市名单折叠区(1.2 起榜单页砍掉, 城市名单并进问答页底部)
+    # 构图: 藏掉 hero/提问卡/答案卡, 用 JS 开 details 的 open 属性,
+    # 让名单落进首屏。(别用 CSS 强开 —— `details:not([open]) .dbody
+    # {display:none}` 那条规则的优先级和注入时机都试过, 不可靠;
+    # 直接改 DOM 属性是一击的。)
+    render("page-cities.png", "index.html",
+           '<style>.wrap>.hero,#sec-answer,#ans{display:none!important}</style>'
+           "<script>document.getElementById('sec-cities').open=true</script>",
+           size=(1280, 900), hide_top=False)
     # 方法与合规页
     render("page-how.png", "how.html", size=(1280, 900))

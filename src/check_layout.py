@@ -7,7 +7,9 @@
 为什么要注入而不是眼看: 折叠区(details)里藏着的宽表格, 即使收起也会参与布局,
 肉眼看不出, 手机一打开就横向滚动 —— 上一版就是这么翻车的。
 
-三页版(index/rank/how) + 单文件离线版(report.html)都要查。
+两页版(index/how) + 单文件离线版(report.html)都要查。
+(1.2 起全国榜单页 rank.html 已砍掉, 完整城市名单并进问答页底部折叠区,
+所以折叠区展开态的体检比过去更重要 —— 388 座城市的 chips 全在里面。)
 
 用法: python src/check_layout.py
 """
@@ -21,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
-TARGETS = ["index.html", "rank.html", "how.html", "report.html"]
+TARGETS = ["index.html", "how.html", "report.html"]
 
 CHROME_CANDIDATES = [
     Path("C:/Program Files/Google/Chrome/Application/chrome.exe"),

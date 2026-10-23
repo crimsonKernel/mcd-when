@@ -5,8 +5,9 @@ render_card.py — 生成 README 首图用的卡片页 (dist/card.html), 再由�
 价格轴是平的(四档最便宜单品都是 ¥5 圆筒), 断层全在菜单构成上 ——
 后三档在 360 座城市里菜单完全相同, 只有早餐是另一套。
 所以首图不再讲「早去省一顿早餐钱」, 改讲「你这个点到店, 有什么可吃」。
+1.2 起产品问题本身也换掉了: 不问「几点最便宜」, 只问「这个点卖什么」。
 
-数据和口径与三页版完全一致: 优先 surface_batch.json(全菜单), 不够 50 城时退回
+数据和口径与两页版完全一致: 优先 surface_batch.json(全菜单), 不够 50 城时退回
 surface_national.json(探针快照); 全菜单缺的 8 座城用探针快照补, 保证 388 城不缺。
 自包含, 零 JS(截图环境跑不了交互)。
 """
@@ -69,7 +70,7 @@ h1{font-size:42px;margin:0 0 6px;letter-spacing:-.5px}
 
 
 def load_cities() -> tuple[list[dict], dict]:
-    """和三页版同一套取数逻辑: 全菜单优先, 探针快照补缺, 返回 (城市, 快照头)。"""
+    """和两页版同一套取数逻辑: 全菜单优先, 探针快照补缺, 返回 (城市, 快照头)。"""
     path = SURFACE_PATH
     if BATCH_PATH.exists():
         try:
@@ -167,13 +168,14 @@ def main() -> int:
         f'<span>向麦当劳订餐系统逐笔问价（{target}），全程只读、不下单</span></div>')
 
     html = f"""<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
-<title>麦当劳几点最便宜 · 全国 {n_cities} 城实测</title>
+<title>麦当劳这个点卖什么 · 全国 {n_cities} 城实测</title>
 <style>{CSS}</style></head><body><div class="card">
-<h1>麦当劳几点最便宜</h1>
+<h1>麦当劳这个点卖什么</h1>
 <span class="tag">✓ 全国 {n_cities} 座城市 · {n_calls} 次真实问价 · 逐笔实测</span>
 <p class="lead">官方把一天切成四档，但<b>后三档卖的东西一模一样</b> ——
 价格轴几乎是平的（四档最便宜的单品都是 ¥5 圆筒），断层全在菜单上。
-所以真正该问的不是「几点最便宜」，而是<b>「我这个点到店，有什么可吃」</b>。</p>
+所以「几点最便宜」的答案永远是早上、这句话没有信息量；
+这个工具只回答<b>「我这个点到店，有什么可吃」</b>。</p>
 {ans}
 <div class="row">{"".join(segs)}</div>
 <div class="facts">{facts}</div>
