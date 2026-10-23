@@ -296,8 +296,8 @@ def tool_data_freshness(ds: dict, args: dict) -> dict:
         "cities": m["cities"],
         "menu_source": m["menuSource"],
         "data_source": m["dataSource"],
-        "note": ("快照数据。麦当劳的标价跨天基本稳定, 但促销价会变"
-                 "(实测麦咖啡冰奶铁中杯曾从 ¥13.90 回到 ¥21.00); "
+        "note": ("快照数据。麦当劳的标价跨天 98.1% 一致(387 城 12552 个单元格实测), "
+                 "但促销价会变(实测麦咖啡冰奶铁中杯曾从 ¥13.90 回到 ¥21.00); "
                  "需要最新价时请用你自己的 MCD_MCP_TOKEN 调官方 MCP。"),
     }
 

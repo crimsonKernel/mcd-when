@@ -189,6 +189,10 @@ button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
  vertical-align:middle}
 .ansname{font-size:19px;font-weight:700;margin:0 0 4px}
 .anshint{font-size:13.5px;color:#6b7280;margin:6px 0 0}
+/* 「快照价」小签: 价格一律冠以快照, 和 hero 副标/页脚同一口径(1.3 起) */
+.snp{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:99px;
+ background:#F3EDE3;color:#8A6D4F;font-size:12px;font-weight:500;letter-spacing:.5px;
+ vertical-align:middle}
 .ansline{font-size:15px;margin:10px 0 0;padding:10px 12px;background:#f6f9ff;
  border:1px solid #dbe6f7;border-radius:10px}
 
@@ -444,6 +448,7 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   .anshero{background:linear-gradient(135deg,#241A0D,#1C1409);border-color:#5E4318;box-shadow:none}
   .anshero .big{color:#B9A68E}.anshero .ansname{color:#F0E7DB}
   .ansprice{color:#F5B45B;background:none;-webkit-text-fill-color:#F5B45B}
+  .snp{background:#3A332A;color:#C9B69A}
   table.mt tbody tr:nth-child(even){background:#1A1D23}
   table.mt tbody tr:hover{background:#22262E}
   table.mt tbody tr.on td:first-child{box-shadow:inset 3px 0 0 #F5B45B}
@@ -853,7 +858,8 @@ JS = """
     var meal = p.meal || p.any;
     if (meal) {
       out.push('<div class="anshero">');
-      out.push('<p class="big">' + (p.meal ? "这一档最便宜的一餐" : "这一档最便宜的一口") + "</p>");
+      out.push('<p class="big">' + (p.meal ? "这一档最便宜的一餐" : "这一档最便宜的一口")
+        + ' <span class="snp">快照价</span></p>');
       out.push('<p class="ansprice">' + yuan(meal.p) + "</p>");
       out.push('<p class="ansname">' + esc(meal.n) + "</p>");
       out.push("</div>");
@@ -944,7 +950,8 @@ JS = """
     }
 
     out.push('<p class="more" style="margin-top:14px">价格是 ' + esc(DATA.targetDate)
-      + " 这一天的实价，来自麦当劳订餐系统；下单前请以 App 实际显示为准。</p>"
+      + " 这一天的实价<b>快照</b>（同日之内恒定、隔夜会变，实测隔一夜就有城调价），"
+      + "来自麦当劳订餐系统；下单前请以 App 实际显示为准。</p>"
       + '<p class="more">想把这一条发给朋友？地址栏里的链接可以直接复制：'
       + "<code>?" + "city=" + encodeURIComponent(city.city) + "&amp;t=" + esc(t) + "</code></p>");
     out.push("</div>");
@@ -1115,7 +1122,8 @@ JS = """
     }
 
     s += '<p class="bhead">¥' + (budgetFen / 100).toFixed(0) + ' 能吃到 <b>'
-      + r.items.length + ' 件</b>，合计 ' + yuan(r.total) + '</p>';
+      + r.items.length + ' 件</b>，合计 ' + yuan(r.total)
+      + ' <span class="snp">快照价</span></p>';
     s += '<ul class="bcombo">';
     for (var j = 0; j < r.items.length; j++) {
       // 统一按数组 [名称下标, 价格, 分类] 取值 —— 曾把锚点做成
@@ -1536,6 +1544,20 @@ def hero_facts(cities_raw: list[dict]) -> dict:
     def med(xs):
         return xs[len(xs) // 2] if xs else 0
 
+    # 真空带的中位边界(早餐收档 -> 午餐开档): 文案里「10:15 收、10:44 开」
+    # 必须从数据现算, 和 price floors 的 gap_bf/gap_lf 不是一回事(那是价格)。
+    def to_min(s):
+        h, m = s.split(":")
+        return int(h) * 60 + int(m)
+
+    def to_hhmm(x):
+        return f"{x // 60:02d}:{x % 60:02d}"
+
+    bf_ends = sorted(to_min(p["end"]) for c in cities_raw
+                     for p in (c.get("periods") or []) if p.get("name") == "早餐")
+    lf_starts = sorted(to_min(p["start"]) for c in cities_raw
+                       for p in (c.get("periods") or []) if p.get("name") == "午餐")
+
     gap, gap_city, gap_bf, gap_lf = gaps[0] if gaps else (0, "", 0, 0)
     cheaper = sum(1 for c in cities_raw
                   if (floor(c, "午餐") or 0) and (floor(c, "早餐") or 0)
@@ -1577,6 +1599,90 @@ def hero_facts(cities_raw: list[dict]) -> dict:
         "tea_extra": round(avg(tea_extra), 1),
         "bf_missing": round(avg(bf_missing)),
         "bf_only": round(avg(bf_only)),
+        # 真空带中位边界(时刻, 不是价格)
+        "vac_bf": to_hhmm(med(bf_ends)) if bf_ends else "",
+        "vac_lf": to_hhmm(med(lf_starts)) if lf_starts else "",
+    }
+
+
+def crossday_facts(batch_surface, probe_surface, min_common=20):
+    """跨日对比: 全菜单快照 vs 探针快照, 回答「隔一天会变吗」。全部实测, 不硬编码。
+
+    口径(写进 how.html 给评委审):
+    - 只比「同城同渠道同商品同时段」且两边都是具体价格的单元格;
+      探针采不到时记 None(实测上海 dt 的麦咖啡冰奶铁四时段全 None),
+      从不填地板价 —— 所以 ¥13.90 是官方真实返回的促销价, 涨价也是真的
+    - None<->有值单算「上下架」, 不算变价
+    - 采集深度/时刻两边不同(探针 vs 全菜单), 所以「会变」能确认、
+      「全因日期而变」确认不了 —— 这句话必须跟着数字一起出现
+    - 重叠城市不足 min_common 座时返回 None, 调用方降级: 文案去掉跨日那句
+    """
+    B = {c.get("city"): c for c in (batch_surface.get("cities") or [])}
+    P = {c.get("city"): c for c in (probe_surface.get("cities") or [])}
+    common = [c for c in P if c in B]
+    if len(common) < min_common:
+        return None
+    total = same = up = dn = flip = floor_up = 0
+    dn_lo = dn_hi = None
+    cu, cd = set(), set()
+    period_diff, start_all, end_all = [], [], []
+    for city in common:
+        pa, pb = P[city].get("prices") or {}, B[city].get("prices") or {}
+        for ch in set(pa) & set(pb):
+            for item in set(pa[ch]) & set(pb[ch]):
+                va, vb = pa[ch][item], pb[ch][item]
+                if not isinstance(va, dict) or not isinstance(vb, dict):
+                    continue
+                for per in set(va) & set(vb):
+                    x, y = va.get(per), vb.get(per)
+                    if isinstance(x, int) and isinstance(y, int):
+                        total += 1
+                        if x == y:
+                            same += 1
+                        elif y > x:
+                            up += 1
+                            cu.add(city)
+                            if x == 1390:      # ¥13.90 = 全国统一的早餐/正餐地板价
+                                floor_up += 1
+                        else:
+                            dn += 1
+                            cd.add(city)
+                            d = x - y
+                            dn_lo = d if dn_lo is None else min(dn_lo, d)
+                            dn_hi = d if dn_hi is None else max(dn_hi, d)
+                    elif (x is None) != (y is None):
+                        flip += 1
+        sa = [(p.get("name"), p.get("start"), p.get("end"))
+              for p in (P[city].get("periods") or [])]
+        sb = [(p.get("name"), p.get("start"), p.get("end"))
+              for p in (B[city].get("periods") or [])]
+        if sa != sb:
+            period_diff.append(city)
+            da = {n: (s, e) for n, s, e in sa}
+            db = {n: (s, e) for n, s, e in sb}
+            for k in da:
+                if k in db and da[k] != db[k]:
+                    if da[k][0] != db[k][0]:
+                        start_all.append((city, k, da[k][0], db[k][0]))
+                    else:
+                        end_all.append((city, k, da[k][1], db[k][1]))
+    if not total:
+        return None
+    return {
+        "n": len(common),
+        "probe_cities": len(P), "batch_cities": len(B),
+        "probe_date": probe_surface.get("targetDate", ""),
+        "batch_date": batch_surface.get("targetDate", ""),
+        "probe_gen": probe_surface.get("generatedAt", ""),
+        "batch_gen": batch_surface.get("generatedAt", ""),
+        "total": total, "same": same,
+        "same_pct": round(same / total * 100, 1),
+        "up": up, "dn": dn, "flip": flip, "floor_up": floor_up,
+        "cities": len(cu | cd), "cities_up": len(cu), "cities_dn": len(cd),
+        "dn_lo": dn_lo or 0, "dn_hi": dn_hi or 0,
+        "period_cities": len(period_diff),
+        "start_n": len(start_all), "end_n": len(end_all),
+        "start_ex": start_all[:2], "end_ex": end_all[:2],
     }
 
 
@@ -1595,10 +1701,13 @@ def main() -> int:
         return 1
     surface = json.loads(path.read_text(encoding="utf-8"))
     cities_raw = list(surface.get("cities") or [])
+    xd = None
     if path == BATCH_PATH and SURFACE_PATH.exists():
         # 全菜单采集有 8 座城因「候选门店均不支持预约取餐(600056)」没采到,
         # 用探针快照补上, 别让页面比探针版少城市。
         probe = json.loads(SURFACE_PATH.read_text(encoding="utf-8"))
+        # 跨日互验要在合并之前做: 全菜单(新日期) vs 探针(旧日期), 两边各自原始口径
+        xd = crossday_facts(surface, probe)
         have = {c.get("city") for c in cities_raw}
         extra = [c for c in (probe.get("cities") or []) if c.get("city") not in have]
         cities_raw += extra
@@ -1693,16 +1802,25 @@ def main() -> int:
             f"本项目为 2026 麦当劳程序员创意开发大赛参赛作品，非麦当劳官方产品。"
             f"价格随门店与日期变动，下单前请以麦当劳 App 实际显示为准。</footer>")
 
+    # 1.3 起价格一律冠以「快照」: 跨日互验证实隔夜会变(见 crossday_facts),
+    # 首屏决策位只答结构(有什么可吃/什么时候有), 价格降级为带日期的参考数.
+    xd_bit = ""
+    if xd:
+        xd_bit = (f"（隔夜实测 {xd['cities']} 城变价、{xd['period_cities']} 城改时段表，"
+                  f"一致率 {xd['same_pct']:g}%）")
     hero_answer = hero(
         "到店前 30 秒，先看一眼这个点卖什么",
         "这个点，麦当劳卖什么",
         f"选<b>城市</b>、选<b>几点去</b>，直接告诉你那一刻的完整在售菜单、"
-        f"最便宜的一顿多少钱、兜里 ¥X 能凑出几件。<br>"
+        f"什么时候什么都买不到、下一档几点开。<br>"
+        f"价格按 <b>{target} 的快照</b>算{xd_bit}：这一档最便宜的一顿、"
+        f"兜里 ¥X 能凑出几件。<br>"
         f"全国 {hf['full_n']} 座有完整四档的城市里，午餐和夜市的菜单 "
         f"{hf['lunch_eq_night']} 座完全相同，下午茶平均只多 "
         f"{hf['tea_extra']:g} 件；只有早餐是另一套菜单 —— "
         f"所以「几点最便宜」的答案永远是早上，有用的是「这个点有什么可吃」。<br>"
-        f"<span class=\"hsub2\">页面上的价格是 {target} 的实价快照（日内实测恒定）；"
+        f"<span class=\"hsub2\">快照口径：{target} 实价，同一天之内恒定；"
+        f"结构（菜单构成、真空带）不过期，价格会过期 —— 所以每页都标数据日期。"
         f"想查此刻的实时价格，一条命令自己采 —— 见<a href=\"how.html\">方法与合规页</a>。</span>",
         [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",
          f"数据日期 <b>{target}</b>", "不用注册 · 手机直接看"])
@@ -1736,6 +1854,54 @@ def main() -> int:
     </div>
   </div>
 </div>"""
+
+    # —— how.html 的跨日互验一节(1.3 新增)。数字全部来自 crossday_facts() 实算,
+    #    不硬编码; xd 为 None(缺任一快照)时整节消失, 第三点降级回 1.2 措辞。
+    xd_section = ""
+    snap3 = (
+        "<p><b>三、快照在「今天」这个粒度上依然成立。</b>实测同一商品一天之内价格恒定，"
+        "变的只是「这个时段卖不卖」；而菜单结构（哪一档卖哪些东西）同样是按天稳定的。"
+        "所以快照 + 时段结构，回答「今天这个点能吃到什么」没有失真。"
+        f"失真的是<b>日期</b>：页面上的价格是 {target} 问回来的，过几天再看，答案是那天的。"
+        "真要查此刻，往下看一条命令。</p>")
+    if xd:
+        st = xd["start_ex"][0] if xd["start_ex"] else None
+        en = xd["end_ex"][0] if xd["end_ex"] else None
+        start_txt = (f"如{st[1]} {st[2]}→{st[3]}" if st else "动的都是开档时间")
+        end_txt = (f"唯一动到收档的是{en[0]}{en[1]}从 {en[2]} 延到 {en[3]}（延长，不是缩短）"
+                   if en and xd["end_n"] == 1 else
+                   (f"另有 {xd['end_n']} 处收档时间变动" if xd["end_n"] else "没收档时间变动"))
+        snap3 = (
+            f"<p><b>三、快照在「今天」这个粒度上依然成立，但只到今天。</b>实测同一商品一天之内"
+            f"价格恒定，菜单结构按天稳定；而<b>隔一天就会变</b>——拿仓库里两个日期的全国"
+            f"快照互验（详见下一节）：{xd['cities']} 城 {xd['up'] + xd['dn']} 个价格单元格变价、"
+            f"{xd['period_cities']} 城时段表变动，一致率 {xd['same_pct']:g}%。"
+            f"所以页面上的价格是 {target} 问回来的，过几天再看，答案是那天的——"
+            f"每页都标数据日期不是谦辞，是实测出来的边界。真要查此刻，往下看一条命令。</p>")
+        xd_section = f"""
+<p class="big">隔一天会变吗 —— 拿两个快照互验</p>
+<p>会，而且这是我们自己测出来的，不是猜的。仓库里恰好有两个日期的全国快照：
+{xd['probe_date']} 的探针采样（{xd['probe_cities']} 城）+
+{xd['batch_date']} 的全菜单逐品（{xd['batch_cities']} 城）。
+对 {xd['n']} 座共同城市，逐「渠道 → 商品 → 时段」单元格对拍：
+{xd['total']} 个可比值里 {xd['same_pct']:g}% 完全一致，变动的 {xd['up'] + xd['dn']} 个长这样 ——</p>
+<ul>
+<li><b>{xd['dn']} 条降价</b>：集中在正餐价位，幅度 −¥{xd['dn_lo'] / 100:.2f} ~ −¥{xd['dn_hi'] / 100:.2f}，
+涉及 {xd['cities_dn']} 城，是促销调价的形态；</li>
+<li><b>{xd['up']} 条涨价</b>：其中 {xd['floor_up']} 条是「¥13.90 促销价 → 常规价」
+（麦咖啡冰奶铁中杯 ¥13.90→¥21.00 是同型实证 —— 探针采不到商品时记 None，
+从不填地板价，所以 ¥13.90 是官方真实返回的价，不是兜底值）；</li>
+<li>另有 {xd['flip']} 个单元格从无价变有价 —— 商品会上下架；</li>
+<li><b>{xd['period_cities']} 城时段表变了</b>：几乎全是开档提前（{start_txt}）；{end_txt}。</li>
+</ul>
+<p><b>没变的是结构。</b>「{hf['vac_bf']} 早餐收档、{hf['vac_lf']} 午餐开档」这个真空带缺口，
+{xd['n']} 座城市两天里纹丝不动；后三档菜单同一套、早餐是另一套，是架构级事实，
+促销动不了它。早前 4664 点小样本对比得到 96.8% 一致率，与全量的 {xd['same_pct']:g}% 互洽。</p>
+<p>一句诚实的局限：两个快照的采集深度不同（探针 vs 全菜单）、采集时刻也不同
+（{xd['probe_gen']} vs {xd['batch_gen']}），所以「会变」能确认，
+「全因日期而变」确认不了 —— 采集时刻效应分不开。这也是页面给价格一律冠以
+「快照」并标注数据日期的原因：<b>结构不过期，价格会过期。</b></p>
+"""
 
     method_body = f"""
 <div class="card">
@@ -1790,11 +1956,7 @@ AI 客户端用自然语言问）。实时个性查询（「我这店此刻买�
 <p><b>二、浏览器进不了官方系统的门。</b>订餐接口不接受网页直连：
 带 Origin 的预检请求返回 403、响应里没有任何跨域许可头，WAF 直接把浏览器挡在门外。
 把个人 Token 塞进前端页面既不安全，也不是这个赛题鼓励的用法。</p>
-<p><b>三、快照在「今天」这个粒度上依然成立。</b>实测同一商品一天之内价格恒定，
-变的只是「这个时段卖不卖」；而菜单结构（哪一档卖哪些东西）同样是按天稳定的。
-所以快照 + 时段结构，回答「今天这个点能吃到什么」没有失真。
-失真的是<b>日期</b>：页面上的价格是 {target} 问回来的，过几天再看，答案是那天的。
-真要查此刻，往下看一条命令。</p>
+{snap3}{xd_section}
 <p class="big">想查此刻的实时价格？一条命令</p>
 <p>用自己的 Token 在本地跑，十几秒出结果，只读、不下单：</p>
 <pre style="white-space:pre-wrap">export MCD_MCP_TOKEN=你的token

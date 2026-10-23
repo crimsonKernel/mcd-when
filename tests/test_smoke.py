@@ -111,6 +111,59 @@ class TestDataFiles(unittest.TestCase):
         self.assertTrue(len(json.dumps(d)) > 1000)
 
 
+class TestCrossday(unittest.TestCase):
+    """跨日互验(crossday_facts)的口径回归。
+
+    关键事实: 探针采不到商品时记 None, 从不填地板价 ——
+    所以 ¥13.90 是官方真实返回的促销价, 「1390 -> 2100」是真涨价(促销结束),
+    不是采集假阳性(上海 dt 的麦咖啡冰奶铁四时段全 None 是实证)。
+    """
+
+    def _surface(self, cities):
+        return {"cities": cities, "targetDate": "2026-10-22",
+                "generatedAt": "2026-10-21T15:42:24"}
+
+    def test_counts_only_two_sided_cells(self):
+        from render_report import crossday_facts
+        probe = self._surface([{"city": "A", "periods": [],
+                                "prices": {"dt": {"i1": {"午餐": 1390, "早餐": None}}}}])
+        batch = self._surface([{"city": "A", "periods": [],
+                                "prices": {"dt": {"i1": {"午餐": 2100, "早餐": 1390}}}}])
+        xd = crossday_facts(batch, probe, min_common=1)
+        # 午餐 1390->2100 是真涨价; 早餐 None->1390 是上下架, 不算变价
+        self.assertEqual((xd["total"], xd["same"], xd["up"], xd["dn"], xd["flip"]),
+                         (1, 0, 1, 0, 1))
+        self.assertEqual(xd["floor_up"], 1)
+
+    def test_identical_prices_mean_no_change(self):
+        from render_report import crossday_facts
+        cities = [{"city": "C%d" % i, "periods": [],
+                   "prices": {"pickup": {"i1": {"午餐": 2100}}}} for i in range(3)]
+        xd = crossday_facts(self._surface(cities), self._surface(cities), min_common=1)
+        self.assertEqual((xd["up"], xd["dn"], xd["flip"], xd["same"]), (0, 0, 0, 3))
+        self.assertEqual(xd["same_pct"], 100.0)
+
+    def test_period_boundary_change_is_tracked(self):
+        from render_report import crossday_facts
+        prices = {"pickup": {"i1": {"午餐": 2100}}}
+        probe = self._surface([{"city": "A",
+                                "periods": [{"name": "早餐", "start": "07:14", "end": "10:15"}],
+                                "prices": prices}])
+        batch = self._surface([{"city": "A",
+                                "periods": [{"name": "早餐", "start": "05:14", "end": "10:15"}],
+                                "prices": prices}])
+        xd = crossday_facts(batch, probe, min_common=1)
+        self.assertEqual(xd["period_cities"], 1)
+        self.assertEqual((xd["start_n"], xd["end_n"]), (1, 0))
+        self.assertEqual(xd["start_ex"][0], ("A", "早餐", "07:14", "05:14"))
+
+    def test_too_little_overlap_returns_none(self):
+        from render_report import crossday_facts
+        probe = self._surface([{"city": "A", "periods": [], "prices": {}}])
+        batch = self._surface([{"city": "B", "periods": [], "prices": {}}])
+        self.assertIsNone(crossday_facts(batch, probe))
+
+
 class TestRenderedSite(unittest.TestCase):
     """两页版 + 单文件离线版的产物结构(未渲染则跳过)。"""
 
@@ -171,10 +224,17 @@ class TestRenderedSite(unittest.TestCase):
         self.assertIn("now.py --city", how)
         self.assertIn("600 次/分钟", how)      # 与 src/mcd_client.py 同一口径
         self.assertNotIn("600 次/3 小时", how)  # 旧口径写错窗口, 别再回来
+        # 1.3 跨日互验一节: 「隔一天会变吗」必须在, 且带着采集时刻的诚实局限
+        self.assertIn("隔一天会变吗", how)
+        self.assertIn("结构不过期，价格会过期", how)
+        self.assertIn("采集时刻效应分不开", how)
         # 问答页 hero 必须标出数据日期, 否则用户分不清答案是哪天的
         idx = self._read("index.html")
         self.assertIn("数据日期", idx)
         self.assertIn("hsub2", idx)
+        # 1.3 起价格一律冠以「快照」: 首屏决策位只答结构, 价格降级为带日期的参考数
+        self.assertIn("快照口径", idx)
+        self.assertNotIn("最便宜的一顿多少钱", idx)   # 旧首屏枚举(价格无快照限定)
 
     def test_menu_fault_is_the_headline(self):
         """「永远早上最便宜」的修正: 价格轴平坦 + 后三档菜单同一套, 必须在每个页面都说清。
