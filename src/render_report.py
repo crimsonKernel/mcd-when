@@ -194,7 +194,36 @@ button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
  background:#F3EDE3;color:#8A6D4F;font-size:12px;font-weight:500;letter-spacing:.5px;
  vertical-align:middle}
 .ansline{font-size:15px;margin:10px 0 0;padding:10px 12px;background:#f6f9ff;
- border:1px solid #dbe6f7;border-radius:10px}
+  border:1px solid #dbe6f7;border-radius:10px}
+
+/* —— 截止时间主数字(1.4「时刻表优先」) ——
+   答案卡的第一眼必须是「这一档几点收」, 不是菜单件数: 顾客普遍不知道
+   早餐 10:15 收(多以为是 10:30), App 界面上也没有地方显示截止时间 ——
+   这是知识传递, 不是数据查询, 也是这个产品对 App 的结构性优势。 */
+.cutoff{margin:0 0 14px;padding:14px 16px 12px;border:1px solid #F2D9B6;border-radius:14px;
+  background:linear-gradient(135deg,#FFF8EF 0%,#FFFDFA 70%)}
+.cutoff .cdtop{font-size:12.5px;font-weight:800;color:#8A6D4F;letter-spacing:.4px;margin:0 0 3px}
+.cutoff .cdmain{font-size:29px;font-weight:800;color:#7C1D12;line-height:1.15;margin:0;
+  letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.cutoff .cdmain b{color:#C2410C;font-variant-numeric:tabular-nums}
+.cutoff .cdcd{font-size:15.5px;font-weight:700;color:#B4531A;letter-spacing:0}
+.cutoff .cdsub{font-size:13px;color:#8A7361;margin:7px 0 0;line-height:1.6}
+/* 真空带/打烊后: 整卡换成截止时间特例, 暖黄/冷灰两种气质 */
+.cutoff.gapcase{border-color:#F0D999;background:linear-gradient(135deg,#FFF4CE 0%,#FFFDF4 70%)}
+.cutoff.gapcase .cdmain,.cutoff.gapcase .cdmain b{color:#8a6100}
+.cutoff.closedcase{border-color:#DFE2E8;background:linear-gradient(135deg,#F6F7F9 0%,#FDFDFE 70%)}
+.cutoff.closedcase .cdmain{color:#5b6472}
+
+/* —— 反向问法: 「想吃早餐 → 最晚 10:15 前到店」 —— */
+.revq{margin:14px 0 0;padding:12px 14px 13px;border:1px solid #E7DFD2;border-radius:13px;
+  background:#FCFBF8}
+.revq .rqlab{font-size:12.5px;font-weight:800;color:#8A6D4F;margin:0 0 8px;letter-spacing:.3px}
+.revchip{display:inline-block;padding:7px 13px;border:1px solid #E4D5BE;border-radius:20px;
+  background:#fff;color:#5A4638;font-size:13.5px;cursor:pointer;line-height:1.5;
+  font-weight:600;transition:border-color .15s,color .15s,background .15s}
+.revchip:hover{border-color:#C2410C;color:#C2410C;background:#FFF9F1}
+.revchip b{color:#B4531A;font-variant-numeric:tabular-nums}
+.revchip.on{border-color:#C2410C;background:#FFF3EA;color:#B4531A}
 
 /* —— 各档价格对比横条 —— */
 .cmp{margin:14px 0 0}
@@ -245,6 +274,14 @@ button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
 .dbseg .h{font-size:10.5px;line-height:1.15;font-variant-numeric:tabular-nums;opacity:.85;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dbseg.cur{box-shadow:inset 0 0 0 2px #7C1D12;z-index:1}
+/* 「此刻/所查时刻」在时间轴上的指针: 一根针 + 脚点, 落在哪档一眼可见。
+   盒宽 11px 装下脚点(圆点不越盒), JS 用 clamp() 把整盒锁在轨道内 ——
+   既不让零宽锚盒被子元素撑出滚动溢出, 也不让指针贴边时探出轨道。 */
+.dbnow{position:absolute;top:0;bottom:0;width:11px;z-index:2;pointer-events:none}
+.dbnow i{position:absolute;left:4px;top:0;bottom:0;width:3px;background:#7C1D12;
+  border-radius:2px;opacity:.92}
+.dbnow u{position:absolute;left:0;bottom:3px;width:11px;height:11px;border-radius:50%;
+  background:#7C1D12;border:2px solid #fff}
 /* 真空带: 两档之间谁都点不到的那几分钟 —— 窄缝不贴文字,
    免得把「真空带很窄」这个事实用省略号糊掉。 */
 .dbseg.gap{min-width:8px;padding:4px 2px;
@@ -473,6 +510,8 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   .dbseg.gap{background:repeating-linear-gradient(45deg,#2A2216 0 6px,#221B12 6px 12px);
     color:#9A8672}
   .dbseg.empty{background:#241D14;color:#9A8672}
+  .dbnow i{background:#F5B45B}
+  .dbnow u{background:#F5B45B;border-color:#191209}
   .dblegend{color:#9A8672}
   .mdiff{background:#1B1810;border-color:#3A3324}
   .mdl{color:#c9c2b6}
@@ -526,6 +565,18 @@ JS = """
 (function () {
   var DATA = window.__MCD_DATA__;
   var cur = DATA.cities[0], curTime = null;
+  /* 1.4「时刻表优先」: 打开即答 —— 城市记进 localStorage, 时刻默认取此刻。
+     nowMode=true 时每 30 秒只更新倒计时和时间轴指针(不重渲整卡, 免得重置
+     用户刚动过的菜单过滤/预算输入); 用户手动选了具体时刻就定住(nowMode=false)。
+     分享链带了 ?t= 同样定住 —— 链接要能复现同一个答案。 */
+  var CITY_KEY = "mcd-when:city";
+  var nowMode = true;
+  function remember(name) {
+    try { localStorage.setItem(CITY_KEY, name); } catch (e) { /* 隐私模式等, 忽略 */ }
+  }
+  function recalled() {
+    try { return localStorage.getItem(CITY_KEY); } catch (e) { return null; }
+  }
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
@@ -608,6 +659,10 @@ JS = """
     var c = findCity(name);
     if (!c) return;
     cur = c;
+    remember(c.city);
+    // 换城市就回到「此刻」: 产品的默认承诺是打开即答, 不是继承上一个时刻
+    curTime = nowTime();
+    nowMode = true;
     syncSels();
     hotChips(); fillTimes(); render();
   }
@@ -691,7 +746,7 @@ JS = """
     if (!segs.length) return "";
     var h = '<div class="dayband">'
       + '<div class="dbhead"><span class="t">今天这一路怎么走的</span>'
-      + '<span class="h">宽度按分钟数 · 点一段就跳过去</span></div>'
+      + '<span class="h"><span id="dbtime">' + esc(t) + '</span> · 宽度按分钟 · 点一段跳过去</span></div>'
       + '<div class="dbscroll"><div class="dbtrack">';
     for (var j = 0; j < segs.length; j++) {
       var g = segs[j];
@@ -721,6 +776,14 @@ JS = """
                  : '<span class="p">无正餐</span>')
           + '<span class="h">' + esc(pp.start) + "</span></button>";      }
     }
+    // 「此刻/所查时刻」指针: 落在哪档(或正好落在真空带里)一眼可见
+    var pct = (toMin(t) - b0) / span * 100;
+    if (pct < 0) pct = 0;
+    if (pct > 100) pct = 100;
+    /* clamp: 脚点中心对准 pct%, 但整盒(11px)不越轨道左右边 —— 贴边时整体内收,
+       指针永远在可视区内, 也不给父轨道制造滚动溢出。 */
+    h += '<div class="dbnow" id="dbnow" style="left:clamp(0px, calc('
+      + pct.toFixed(2) + '% - 5.5px), calc(100% - 11px))"><i></i><u></u></div>';
     h += "</div></div>"
       + '<div class="dblegend"><span><i style="background:#D98324"></i>早餐</span>'
       + '<span><i style="background:#C2410C"></i>午餐</span>'
@@ -773,6 +836,41 @@ JS = """
         var t = this.getAttribute("data-t");
         if (!t) return;
         curTime = clampSlot(cur, t);
+        nowMode = false;
+        fillTimes();
+        render();
+      };
+    }
+  }
+
+  /* ---- 反向问法(1.4): 「想吃早餐 → 最晚 10:15 前到店」 ----
+     规划型需求: 用户不知道截止时间, 问的往往是「我想吃 X, 几点去」。
+     答案就在 periods 里(最晚=收档时刻); 点一粒 chip 把时刻设到那一档的
+     中间, 直接看那一档卖什么。 */
+  function midOf(q) {
+    var m = Math.floor((toMin(q.start) + toMin(q.end)) / 2);
+    return pad(Math.floor(m / 60)) + ":" + pad(m % 60);
+  }
+  function revQuery(city, t) {
+    var ps = city.periods || [];
+    if (!ps.length) return "";
+    var curP = periodOf(city, t);
+    var h = '<div class="revq"><p class="rqlab">换个问法：你想吃哪一档（点一粒看那一档）</p><div class="chips">';
+    for (var i = 0; i < ps.length; i++) {
+      var q = ps[i];
+      h += '<button type="button" class="revchip'
+        + (curP && curP.name === q.name ? " on" : "")
+        + '" data-t="' + esc(midOf(q)) + '">想吃' + esc(q.name) + " → 最晚 <b>"
+        + esc(q.end) + "</b> 前到店</button>";
+    }
+    return h + "</div></div>";
+  }
+  function bindRevQuery() {
+    var nodes = document.querySelectorAll("#ans .revchip[data-t]");
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].onclick = function () {
+        curTime = clampSlot(cur, this.getAttribute("data-t"));
+        nowMode = false;
         fillTimes();
         render();
       };
@@ -792,21 +890,20 @@ JS = """
       if (toMin(slots[j]) <= toMin(curTime)) idx = j;
     }
     sel.selectedIndex = idx;
-    curTime = sel.value;
+    /* 1.4 起不再把 curTime 收窄成整半点: 倒计时要按真实时刻算
+       (09:52 就问 09:52, 不假装是 09:30), 深链里的 ?t=10:20 也不再被吃掉。 */
   }
 
   function nowTime() {
     var n = new Date();
-    var s = pad(n.getHours()) + ":" + pad(n.getMinutes());
-    var slots = slotList(cur), t = slots[0];
-    for (var i = 0; i < slots.length; i++) if (toMin(slots[i]) <= toMin(s)) t = slots[i];
-    return t;
+    return pad(n.getHours()) + ":" + pad(n.getMinutes());
   }
 
   /* ---- 主渲染 ---- */
   function finish(out) {
     document.getElementById("ans").innerHTML = out.join("");
     bindDayBand();
+    bindRevQuery();
     syncUrl();
   }
   function render() {
@@ -820,20 +917,30 @@ JS = """
 
     var p = periodOf(city, t);
     if (!p) {
-      // 真空带 / 打烊后: 这是最该被大声说出来的情况 —— 用户站在门口,
-      // 这时候告诉他「什么都买不到」比任何菜单都有用。
-      var nx = nextPeriod(city, t), prev = prevPeriod(city, t), msg;
+      // 真空带 / 打烊后 / 还没开档: 整卡换成「截止时间」特例 —— 用户站在门口,
+      // 这时候告诉他「什么都买不到、再等几分钟」比任何菜单都有用。
+      // 这是全产品唯一严格优于 App 的时刻: App 只给一个空菜单, 没有解释。
+      var nx = nextPeriod(city, t), prev = prevPeriod(city, t);
+      var w = nx ? toMin(nx.start) - toMin(t) : 0;
+      var top, main, cd, sub;
       if (nx) {
-        var w = toMin(nx.start) - toMin(t);
-        msg = "这个点<b>什么都买不到</b> —— 麦当劳正在换菜单"
-          + (prev ? "，" + esc(prev.name) + "档 " + prev.end + " 已经收了" : "")
-          + "。再等 <b>" + (w > 0 ? w + " 分钟" : "一会儿") + "</b>，"
-          + esc(nx.name) + "档 <b>" + nx.start + "</b> 才开档。";
+        top = prev ? "菜单真空带" : "还没开档";
+        main = "什么都买不到";
+        cd = w > 0 ? "，再等 <b>" + w + "</b> 分钟" : "，再等一会儿";
+        sub = prev
+          ? esc(prev.name) + "档 " + prev.end + " 已收 · " + esc(nx.name) + "档 " + nx.start + " 才开"
+          : esc(nx.name) + "档 " + nx.start + " 才开档，还没到时间";
       } else {
-        msg = "这个点已经<b>过了当天的供餐时间</b>，什么都买不到了"
-          + (prev ? "（" + esc(prev.name) + "档 " + prev.end + " 收档）" : "") + "。";
+        top = "已过今天的供餐时间";
+        main = "今天已收档";
+        cd = "";
+        sub = prev ? esc(prev.name) + "档 " + prev.end + " 收档 · 明天请早"
+                   : "这家店今天没有供餐时段";
       }
-      out.push('<p class="state gap">' + msg + "</p>");
+      out.push('<div class="cutoff ' + (nx ? "gapcase" : "closedcase") + '">'
+        + '<p class="cdtop">' + esc(city.city) + " · " + esc(t) + " · " + top + "</p>"
+        + '<p class="cdmain">' + main + '<span class="cdcd">' + cd + "</span></p>"
+        + '<p class="cdsub">' + sub + "</p></div>");
       out.push('<p class="big">这家店的供餐时段（差一分钟就换一档）</p>');
       for (var i = 0; i < city.periods.length; i++) {
         var q = city.periods[i];
@@ -841,19 +948,28 @@ JS = """
           + q.start + "–" + q.end + (q.meal ? "，最便宜一餐 " + yuan(q.meal.p) : "") + "</p>");
       }
       out.push('<p class="anshint">门店营业时间 ' + esc(city.biz[0]) + "–" + esc(city.biz[1])
-        + '。开门不等于能点：时段没开档，App 里就是空的。</p>');
+        + '。开门不等于能点：时段没开档，App 里就是空的 —— 这个页面就是为这一刻做的。</p>');
       out.push("</div>");
       finish(out);
       return;
     }
 
-    // 1.2 起不再说「这是今天最便宜的一档」—— 四档一餐地板价几乎一样,
-    // 那句话是伪信息。改成说清楚这一档的边界和之后换什么。
+    // 1.4「时刻表优先」: 答案卡第一眼是截止时间 + 倒计时, 不是菜单件数。
+    // (1.2 此处是「这个点属于 X 档」的 state 行, 1.4 升级成主数字。)
+    // 顾客普遍不知道早餐 10:15 收(多以为是 10:30), App 也不显示截止时间 ——
+    // 这是知识传递, 也是我们对 App 的结构性优势所在。
     var nx2 = nextPeriod(city, t);
-    out.push('<p class="state ok">' + pdot(p.name) + "这个点属于 <b>" + esc(p.name)
-      + "档</b>（" + p.start + "–" + p.end + "）"
-      + (nx2 ? "，到 <b>" + p.end + "</b> 之后换<b>" + esc(nx2.name) + "档</b>"
-             : "，今天最后一档") + "</p>");
+    var left = toMin(p.end) - toMin(t);
+    out.push('<div class="cutoff">'
+      + '<p class="cdtop">' + esc(city.city) + " · " + esc(t)
+      + (nowMode ? " · 此刻，每 30 秒自动刷新" : "") + "</p>"
+      + '<p class="cdmain">' + esc(p.name) + "档 " + p.end + " 收档"
+      + '<span class="cdcd" id="cdcd">'
+      + (nowMode && left > 0 ? "，还剩 <b>" + left + "</b> 分钟" : "")
+      + "</span></p>"
+      + '<p class="cdsub">' + p.start + " 开档"
+      + (nx2 ? " · 到点后换" + esc(nx2.name) + "档（" + nx2.start + " 开）"
+             : " · 今天最后一档，过点就收") + "</p></div>");
 
     var meal = p.meal || p.any;
     if (meal) {
@@ -894,6 +1010,9 @@ JS = """
       }
       out.push("</div>");
     }
+
+    // 反向问法(1.4): 规划型需求 —— 「我想吃早餐, 几点去」, periods 直接出
+    out.push(revQuery(city, t));
 
     // 各档一餐地板价对比横条。1.2 起它不再承担「比价省钱」的叙事 ——
     // 四档几乎同价正是这个产品不问「几点最便宜」的原因 —— 而是反过来
@@ -1355,9 +1474,41 @@ JS = """
     if (t) curTime = t[1];
   }
 
+  /* 1.4 心跳: nowMode 下每 30 秒对一次表。跨档(或跨出供餐)才重渲整卡;
+     否则只改倒计时数字和时间轴指针 —— 不碰用户刚动过的菜单过滤/预算输入。 */
+  function tick() {
+    if (!nowMode) return;
+    var t = nowTime();
+    if (periodOf(cur, t) !== periodOf(cur, curTime)
+        || nextPeriod(cur, t) !== nextPeriod(cur, curTime)) {
+      curTime = t; fillTimes(); render(); return;
+    }
+    curTime = t;
+    var el = document.getElementById("cdcd");
+    if (el) {
+      var p = periodOf(cur, t), l = p ? toMin(p.end) - toMin(t) : 0;
+      el.innerHTML = l > 0 ? "，还剩 <b>" + l + "</b> 分钟" : "";
+    }
+    var mk = document.getElementById("dbnow");
+    if (mk) {
+      var b0 = toMin(cur.biz[0]), b1 = toMin(cur.biz[1]);
+      if (b1 <= b0) b1 = 24 * 60 - 1;
+      var pct = (toMin(t) - b0) / (b1 - b0) * 100;
+      if (pct < 0) pct = 0;
+      if (pct > 100) pct = 100;
+      /* 与 dayBand() 同一套 clamp: 盒宽 11px, 贴边内收, 绝不越出轨道 */
+      mk.style.left = "clamp(0px, calc(" + pct.toFixed(2) + "% - 5.5px), calc(100% - 11px))";
+    }
+    var tt = document.getElementById("dbtime");
+    if (tt) tt.textContent = t;
+  }
+
   function init() {
+    var back = recalled();
+    if (back) { var c0 = findCity(back); if (c0) cur = c0; }
     curTime = nowTime();
     fromUrl();
+    if (/[?&]t=/.test(location.search)) nowMode = false;   // 分享链带了时刻就定住
     fillProv();
     syncSels();
     hotChips();
@@ -1368,14 +1519,15 @@ JS = """
     };
     document.getElementById("citySel").onchange = function () { pick(this.value); };
     document.getElementById("times").onchange = function () {
-      curTime = this.value; render();
+      curTime = this.value; nowMode = false; render();
     };
     document.getElementById("nowbtn").onclick = function () {
-      curTime = nowTime(); fillTimes(); render();
+      curTime = nowTime(); nowMode = true; fillTimes(); render();
       var box = document.getElementById("ans");
       if (box && box.scrollIntoView) box.scrollIntoView({ block: "start" });
     };
     render();
+    setInterval(tick, 30000);
   }
 
   if (document.readyState === "loading") {
@@ -1557,6 +1709,8 @@ def hero_facts(cities_raw: list[dict]) -> dict:
                      for p in (c.get("periods") or []) if p.get("name") == "早餐")
     lf_starts = sorted(to_min(p["start"]) for c in cities_raw
                        for p in (c.get("periods") or []) if p.get("name") == "午餐")
+    night_ends = sorted(to_min(p["end"]) for c in cities_raw
+                        for p in (c.get("periods") or []) if p.get("name") == "夜市")
 
     gap, gap_city, gap_bf, gap_lf = gaps[0] if gaps else (0, "", 0, 0)
     cheaper = sum(1 for c in cities_raw
@@ -1602,6 +1756,9 @@ def hero_facts(cities_raw: list[dict]) -> dict:
         # 真空带中位边界(时刻, 不是价格)
         "vac_bf": to_hhmm(med(bf_ends)) if bf_ends else "",
         "vac_lf": to_hhmm(med(lf_starts)) if lf_starts else "",
+        # 真空带长度(分钟)与最后一档的收档时刻(全国中位) —— 首屏时刻表 facts 用
+        "gap_mins": (med(lf_starts) - med(bf_ends)) if bf_ends and lf_starts else 0,
+        "night_end": to_hhmm(med(night_ends)) if night_ends else "",
     }
 
 
@@ -1777,7 +1934,7 @@ def main() -> int:
             for k, t in [("answer", "这个点有什么"), ("how", "方法与合规")])
         dl = ("" if single else
               '<a class="dl" href="report.html" download>离线单文件版 ↓</a>')
-        return (f'<nav class="nav"><span class="brand">🍔 麦当劳这个点卖什么</span>'
+        return (f'<nav class="nav"><span class="brand">🍔 麦当劳时刻表</span>'
                 f"{links}{dl}</nav>")
 
     def shell(title: str, nav_html: str, body: str,
@@ -1808,22 +1965,26 @@ def main() -> int:
     if xd:
         xd_bit = (f"（隔夜实测 {xd['cities']} 城变价、{xd['period_cities']} 城改时段表，"
                   f"一致率 {xd['same_pct']:g}%）")
+    # 1.4「时刻表优先」: 首屏问题从「这个点卖什么」升级成「几点收档、几点开档」——
+    # 时刻表是产品, 菜单是载荷。顾客和 App 都不知道截止时间, 这才是真需求。
     hero_answer = hero(
-        "到店前 30 秒，先看一眼这个点卖什么",
-        "这个点，麦当劳卖什么",
-        f"选<b>城市</b>、选<b>几点去</b>，直接告诉你那一刻的完整在售菜单、"
-        f"什么时候什么都买不到、下一档几点开。<br>"
-        f"价格按 <b>{target} 的快照</b>算{xd_bit}：这一档最便宜的一顿、"
-        f"兜里 ¥X 能凑出几件。<br>"
-        f"全国 {hf['full_n']} 座有完整四档的城市里，午餐和夜市的菜单 "
-        f"{hf['lunch_eq_night']} 座完全相同，下午茶平均只多 "
-        f"{hf['tea_extra']:g} 件；只有早餐是另一套菜单 —— "
-        f"所以「几点最便宜」的答案永远是早上，有用的是「这个点有什么可吃」。<br>"
-        f"<span class=\"hsub2\">快照口径：{target} 实价，同一天之内恒定；"
-        f"结构（菜单构成、真空带）不过期，价格会过期 —— 所以每页都标数据日期。"
+        f"全国 {n_cities} 城的麦当劳时刻表",
+        f"早餐 {hf['vac_bf']} 收档，午餐 {hf['vac_lf']} 开档",
+        f"选<b>城市</b>（记住你的，下次打开直接答），页面按<b>此刻时间</b>告诉你："
+        f"这一档几点收、还剩多久、在售什么、兜里 ¥X 能凑几件。<br>"
+        f"每天 {hf['vac_bf']}–{hf['vac_lf']} 是菜单真空带（全国中位 {hf['gap_mins']:g} 分钟，"
+        f"什么都买不到）；最后一档 {hf['night_end']} 收档。"
+        f"价格按 <b>{target} 的快照</b>算{xd_bit}。<br>"
+        f"官方把一天切成四档，但后三档卖的东西在 {hf['full_n']} 座有完整四档的城市里"
+        f"几乎一模一样（午餐和夜市 {hf['lunch_eq_night']} 座完全相同，下午茶平均只多 "
+        f"{hf['tea_extra']:g} 件）—— 时段差异全在菜单，不在价格。<br>"
+        f"<span class=\"hsub2\">快照口径：{target} 实价，同一天之内恒定、隔夜会变；"
+        f"结构（时段边界、真空带、菜单构成）不过期 —— 所以每页都标数据日期。"
         f"想查此刻的实时价格，一条命令自己采 —— 见<a href=\"how.html\">方法与合规页</a>。</span>",
         [f"<b>{n_cities}</b>座城市", f"<b>{n_calls}</b>次真实问价",
-         f"数据日期 <b>{target}</b>", "不用注册 · 手机直接看"])
+         f"数据日期 <b>{target}</b>",
+         f"早餐 <b>{hf['vac_bf']}</b> 收 · 夜市 <b>{hf['night_end']}</b> 收",
+         "打开即答 · 记住城市"])
 
     q_widget = """<div class="q">
   <div class="qrow">
@@ -1842,7 +2003,7 @@ def main() -> int:
     <div id="suggest"></div>
   </div>
   <div class="qrow">
-    <span class="qlab"><span class="qnum">2</span>你几点去</span>
+    <span class="qlab"><span class="qnum">2</span>想查别的时刻？</span>
     <div class="selrow">
       <div class="field">
         <label class="flab" for="times">到店时间</label>
@@ -1850,8 +2011,10 @@ def main() -> int:
       </div>
     </div>
     <div class="acts">
-      <button class="now primary" id="nowbtn" type="button">就用现在这个时间</button>
+      <button class="now primary" id="nowbtn" type="button">回到此刻</button>
     </div>
+    <p class="qhint">不选也行 —— 打开页面就按此刻答，倒计时每 30 秒自动刷新；
+    选了具体时刻（或点时间轴上的哪一段）就定住，方便你规划。</p>
   </div>
 </div>"""
 
@@ -1922,6 +2085,14 @@ def main() -> int:
 「直接告诉我今天最便宜的时刻」按钮和全国榜单页，只留下到店那一刻真正用得上的东西：
 完整在售菜单、这一档最便宜的一顿多少钱、真空带警告、下一档什么时候变、
 以及兜里 ¥X 能凑出几件。</p>
+<p><b>1.4 又往前迈了一步：把「时刻表」本身当成产品。</b>既然「几点最便宜」答案恒定、
+只值几块钱，不配做工具；而「这个点有什么可吃」又得打开 App 才知道 —— 那这个产品
+就应该是<b>顾客和 App 都不知道的那部分</b>：早餐 {hf['vac_bf']} 收档（多数人以为是
+10:30，App 界面上也没有地方显示）、每天 {hf['vac_bf']}–{hf['vac_lf']} 的真空带、
+最后一档 {hf['night_end']} 收档、异地开档差 4 小时。所以问答页改成「时刻表优先」：
+打开即答（记住城市 + 按此刻时间，倒计时每 30 秒刷新），答案卡第一眼是截止时间和
+倒计时，菜单和快照价退成载荷。时间结构跨日稳定（两个快照互验，真空带在 387 城
+纹丝不动），价格照旧带日期签。</p>
 <p class="big">为什么按档问价就够</p>
 <p>先做了一次实测：同一商品在一天之内价格恒定，变化的是「这个时段卖不卖」。
 所以按档问价即可覆盖全天，不必逐分钟地毯式轰炸。</p>
@@ -1985,7 +2156,7 @@ python -m unittest discover tests   # 42 项冒烟测试</pre>
     # ① 问答页(Pages 根路径) —— 1.2 起它就是全部产品:
     #    选城市选时刻 → 这一刻卖什么/多少钱/¥X 能凑多饱, 外加兜底的城市名单。
     index_html = shell(
-        f"麦当劳这个点卖什么 · 全国 {n_cities} 城，选城市和时刻直接看菜单",
+        f"麦当劳时刻表 · 这个点卖什么 · 全国 {n_cities} 城，打开即答",
         nav("answer"),
         hero_answer + f'<div id="sec-answer">{q_widget}</div>'
         + f'<div id="ans">{fallback}</div>'
@@ -2011,7 +2182,7 @@ python -m unittest discover tests   # 42 项冒烟测试</pre>
 
     # ③ 单文件离线版(双击即开, 一切内嵌 —— 保持这个卖点不变)
     single_html = shell(
-        f"麦当劳这个点卖什么 · 全国 {n_cities} 城，选城市和时刻直接看菜单",
+        f"麦当劳时刻表 · 这个点卖什么 · 全国 {n_cities} 城，打开即答",
         nav("answer", single=True),
         hero_answer + f'<div id="sec-answer">{q_widget}</div>'
         + f'<div id="ans">{fallback}</div>'

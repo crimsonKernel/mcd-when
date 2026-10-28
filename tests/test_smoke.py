@@ -239,24 +239,55 @@ class TestRenderedSite(unittest.TestCase):
     def test_menu_fault_is_the_headline(self):
         """「永远早上最便宜」的修正: 价格轴平坦 + 后三档菜单同一套, 必须在每个页面都说清。
 
-        1.2 起叙事升级: 不只「说清」, 而是把问题本身换掉 —— 首屏不再回答
-        「几点最便宜」, 改问「这个点有什么可吃」; rank.html 榜单页已砍掉,
-        改断言 index/how/report 三个产物。
+        1.2 起叙事升级: 把问题本身换掉 —— 不问「几点最便宜」, 只问「这个点有什么可吃」。
+        1.4 再升级「时刻表优先」(when leads, what follows): 首屏第一眼是收档时间,
+        不是菜单件数 —— repo 名 mcd-when 的 when 回到主位。截止时间是知识传递
+        (顾客普遍不知道早餐 10:15 收), 这正是对 App 的结构性优势。
         """
         idx = self._read("index.html")
-        self.assertIn("这个点，麦当劳卖什么", idx)              # 1.2 首屏问题
-        self.assertIn("午餐和夜市的菜单", idx)
-        # 答案卡里的菜单差异块(早餐列独有商品 / 后三档明说没有独有)
+        # 1.4 首屏: h1 直接给时刻表答案(边界现算, 不许硬编码成写死的钟点)
+        self.assertRegex(idx, r"<h1>早餐 \d\d:\d\d 收档，午餐 \d\d:\d\d 开档</h1>")
+        self.assertIn("麦当劳时刻表", idx)          # nav / title 与 repo 名对齐
+        # 真空带作为独立叙事进 hero: 每天 X–Y 什么都买不到
+        self.assertRegex(idx, r"每天 \d\d:\d\d–\d\d:\d\d 是菜单真空带")
+        self.assertIn("最后一档", idx)
+        # 菜单断层仍要在(1.1 的叙事没丢)
+        self.assertIn("午餐和夜市", idx)
         self.assertIn("这一档的菜单，和别档比差在哪", idx)
         self.assertIn("没有一件是这一档独有的", idx)
-        # 价格轴平坦要作为证据直接说出来(不是只藏在数据里)
         self.assertIn("价格轴是平的", idx)
+        # 1.4 打开即答: 城市记忆 + now 默认态 + 30 秒心跳(跨档才重渲)
+        self.assertIn("mcd-when:city", idx)
+        self.assertIn("var nowMode = true", idx)
+        self.assertIn("setInterval(tick, 30000)", idx)
+        # 1.4 截止时间做主数字: 答案卡第一眼是「X 档 HH:MM 收档」+ 倒计时
+        self.assertIn('class="cutoff', idx)
+        self.assertIn('id="cdcd"', idx)
+        # 1.4 真空带/打烊/未开档特例卡: 真空期说「什么都买不到」而不是列空菜单
+        self.assertIn("gapcase", idx)
+        self.assertIn("closedcase", idx)
+        self.assertIn("什么都买不到", idx)
+        self.assertIn("还没开档", idx)
+        self.assertIn("今天已收档", idx)
+        # 1.4 时间轴常驻 + 现在指针
+        self.assertIn('id="dbnow"', idx)
+        self.assertIn('id="dbtime"', idx)
+        # 1.4 反向问法: 「想吃早餐 → 最晚 HH:MM 前到店」
+        self.assertIn("revQuery", idx)
+        self.assertIn("revchip", idx)
+        self.assertIn("前到店", idx)
         how = self._read("how.html")
         self.assertIn("为什么这个工具不回答「几点最便宜」", how)
         self.assertIn("价格轴几乎是平的", how)
+        self.assertIn("把「时刻表」本身当成产品", how)   # 1.4 叙事段
         rp = self._read("report.html")
-        self.assertIn("这个点，麦当劳卖什么", rp)
+        self.assertRegex(rp, r"<h1>早餐 \d\d:\d\d 收档，午餐 \d\d:\d\d 开档</h1>")
         self.assertIn("价格轴是平的", rp)
+        self.assertIn("菜单真空带", rp)
+        # 单文件离线版与两页版同源: 打开即答三件套一份不少
+        self.assertIn("mcd-when:city", rp)
+        self.assertIn("setInterval(tick, 30000)", rp)
+        self.assertIn("revchip", rp)
 
     def test_data_js_is_valid_assignment(self):
         import json

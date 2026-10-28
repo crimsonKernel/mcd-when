@@ -1,4 +1,4 @@
-# WorkBuddy 开发说明 · 麦当劳几点最便宜 (mcd-when)
+# WorkBuddy 开发说明 · 麦当劳时刻表 (mcd-when)
 
 本项目全程使用腾讯 WorkBuddy 智能体完成创意构思、竞品分析、接口勘探、代码编写与真机调试，
 用于参与 2026 麦当劳程序员创意开发大赛的 WorkBuddy 专项奖励联动。

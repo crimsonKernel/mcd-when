@@ -134,7 +134,36 @@ button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
  background:#F3EDE3;color:#8A6D4F;font-size:12px;font-weight:500;letter-spacing:.5px;
  vertical-align:middle}
 .ansline{font-size:15px;margin:10px 0 0;padding:10px 12px;background:#f6f9ff;
- border:1px solid #dbe6f7;border-radius:10px}
+  border:1px solid #dbe6f7;border-radius:10px}
+
+/* —— 截止时间主数字(1.4「时刻表优先」) ——
+   答案卡的第一眼必须是「这一档几点收」, 不是菜单件数: 顾客普遍不知道
+   早餐 10:15 收(多以为是 10:30), App 界面上也没有地方显示截止时间 ——
+   这是知识传递, 不是数据查询, 也是这个产品对 App 的结构性优势。 */
+.cutoff{margin:0 0 14px;padding:14px 16px 12px;border:1px solid #F2D9B6;border-radius:14px;
+  background:linear-gradient(135deg,#FFF8EF 0%,#FFFDFA 70%)}
+.cutoff .cdtop{font-size:12.5px;font-weight:800;color:#8A6D4F;letter-spacing:.4px;margin:0 0 3px}
+.cutoff .cdmain{font-size:29px;font-weight:800;color:#7C1D12;line-height:1.15;margin:0;
+  letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.cutoff .cdmain b{color:#C2410C;font-variant-numeric:tabular-nums}
+.cutoff .cdcd{font-size:15.5px;font-weight:700;color:#B4531A;letter-spacing:0}
+.cutoff .cdsub{font-size:13px;color:#8A7361;margin:7px 0 0;line-height:1.6}
+/* 真空带/打烊后: 整卡换成截止时间特例, 暖黄/冷灰两种气质 */
+.cutoff.gapcase{border-color:#F0D999;background:linear-gradient(135deg,#FFF4CE 0%,#FFFDF4 70%)}
+.cutoff.gapcase .cdmain,.cutoff.gapcase .cdmain b{color:#8a6100}
+.cutoff.closedcase{border-color:#DFE2E8;background:linear-gradient(135deg,#F6F7F9 0%,#FDFDFE 70%)}
+.cutoff.closedcase .cdmain{color:#5b6472}
+
+/* —— 反向问法: 「想吃早餐 → 最晚 10:15 前到店」 —— */
+.revq{margin:14px 0 0;padding:12px 14px 13px;border:1px solid #E7DFD2;border-radius:13px;
+  background:#FCFBF8}
+.revq .rqlab{font-size:12.5px;font-weight:800;color:#8A6D4F;margin:0 0 8px;letter-spacing:.3px}
+.revchip{display:inline-block;padding:7px 13px;border:1px solid #E4D5BE;border-radius:20px;
+  background:#fff;color:#5A4638;font-size:13.5px;cursor:pointer;line-height:1.5;
+  font-weight:600;transition:border-color .15s,color .15s,background .15s}
+.revchip:hover{border-color:#C2410C;color:#C2410C;background:#FFF9F1}
+.revchip b{color:#B4531A;font-variant-numeric:tabular-nums}
+.revchip.on{border-color:#C2410C;background:#FFF3EA;color:#B4531A}
 
 /* —— 各档价格对比横条 —— */
 .cmp{margin:14px 0 0}
@@ -185,6 +214,14 @@ button.now:hover{border-color:#C2410C;color:#C2410C;background:#FFF3EA}
 .dbseg .h{font-size:10.5px;line-height:1.15;font-variant-numeric:tabular-nums;opacity:.85;
  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dbseg.cur{box-shadow:inset 0 0 0 2px #7C1D12;z-index:1}
+/* 「此刻/所查时刻」在时间轴上的指针: 一根针 + 脚点, 落在哪档一眼可见。
+   盒宽 11px 装下脚点(圆点不越盒), JS 用 clamp() 把整盒锁在轨道内 ——
+   既不让零宽锚盒被子元素撑出滚动溢出, 也不让指针贴边时探出轨道。 */
+.dbnow{position:absolute;top:0;bottom:0;width:11px;z-index:2;pointer-events:none}
+.dbnow i{position:absolute;left:4px;top:0;bottom:0;width:3px;background:#7C1D12;
+  border-radius:2px;opacity:.92}
+.dbnow u{position:absolute;left:0;bottom:3px;width:11px;height:11px;border-radius:50%;
+  background:#7C1D12;border:2px solid #fff}
 /* 真空带: 两档之间谁都点不到的那几分钟 —— 窄缝不贴文字,
    免得把「真空带很窄」这个事实用省略号糊掉。 */
 .dbseg.gap{min-width:8px;padding:4px 2px;
@@ -413,6 +450,8 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
   .dbseg.gap{background:repeating-linear-gradient(45deg,#2A2216 0 6px,#221B12 6px 12px);
     color:#9A8672}
   .dbseg.empty{background:#241D14;color:#9A8672}
+  .dbnow i{background:#F5B45B}
+  .dbnow u{background:#F5B45B;border-color:#191209}
   .dblegend{color:#9A8672}
   .mdiff{background:#1B1810;border-color:#3A3324}
   .mdl{color:#c9c2b6}
@@ -462,7 +501,7 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 }
 </style></head><body>
 <div class="wrap">
-<nav class="nav"><span class="brand">🍔 麦当劳这个点卖什么</span><a href="index.html">这个点有什么</a><a href="how.html" class="on">方法与合规</a><a class="dl" href="report.html" download>离线单文件版 ↓</a></nav>
+<nav class="nav"><span class="brand">🍔 麦当劳时刻表</span><a href="index.html">这个点有什么</a><a href="how.html" class="on">方法与合规</a><a class="dl" href="report.html" download>离线单文件版 ↓</a></nav>
 <header class="hero"><p class="hook">每一个数字都能复现</p><h1>这些数字是怎么来的</h1><p class="hsub">价格不是估的，是 36200 次真实问价问回来的；算法只有一份实现，网页和 MCP 两个入口逐分一致。这一页把方法、边界和合规都说清楚。</p><div class="hero-stats"><span class="hs"><b>36200</b>次真实问价</span><span class="hs">链路只读</span><span class="hs">网页 / MCP 双入口</span><span class="hs">参赛作品 · 非官方</span></div></header>
 <div class="card">
 <p class="big" style="margin-top:0">价格不是估的</p>
@@ -482,6 +521,14 @@ footer{max-width:820px;margin:24px auto 0;color:#8b93a3;font-size:12.5px;
 「直接告诉我今天最便宜的时刻」按钮和全国榜单页，只留下到店那一刻真正用得上的东西：
 完整在售菜单、这一档最便宜的一顿多少钱、真空带警告、下一档什么时候变、
 以及兜里 ¥X 能凑出几件。</p>
+<p><b>1.4 又往前迈了一步：把「时刻表」本身当成产品。</b>既然「几点最便宜」答案恒定、
+只值几块钱，不配做工具；而「这个点有什么可吃」又得打开 App 才知道 —— 那这个产品
+就应该是<b>顾客和 App 都不知道的那部分</b>：早餐 10:15 收档（多数人以为是
+10:30，App 界面上也没有地方显示）、每天 10:15–10:44 的真空带、
+最后一档 21:45 收档、异地开档差 4 小时。所以问答页改成「时刻表优先」：
+打开即答（记住城市 + 按此刻时间，倒计时每 30 秒刷新），答案卡第一眼是截止时间和
+倒计时，菜单和快照价退成载荷。时间结构跨日稳定（两个快照互验，真空带在 387 城
+纹丝不动），价格照旧带日期签。</p>
 <p class="big">为什么按档问价就够</p>
 <p>先做了一次实测：同一商品在一天之内价格恒定，变化的是「这个时段卖不卖」。
 所以按档问价即可覆盖全天，不必逐分钟地毯式轰炸。</p>
